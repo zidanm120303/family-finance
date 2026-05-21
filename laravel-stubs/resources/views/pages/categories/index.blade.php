@@ -1,0 +1,6 @@
+@extends('layouts.app')
+@section('page_title','Kategori')
+@section('page_subtitle','Dashboard > Kategori')
+@section('content')
+<x-card class="p-6"><div class="flex justify-between items-center mb-6"><div class="space-x-3"><button class="rounded-2xl bg-rose-50 text-rose-600 px-5 py-3 font-bold">Pengeluaran</button><button class="rounded-2xl bg-emerald-50 text-emerald-600 px-5 py-3 font-bold">Pemasukan</button></div><button class="rounded-2xl bg-emerald-600 text-white px-5 py-3 font-bold">+ Tambah Kategori</button></div><table class="w-full text-sm"><thead><tr class="text-slate-500 border-b"><th class="text-left p-4">Kategori</th><th class="text-left p-4">Tipe</th><th class="text-left p-4">Warna</th><th class="text-left p-4">Deskripsi</th><th class="text-left p-4">Status</th></tr></thead><tbody>@foreach(['IPL','Imunisasi','Listrik','Internet','BPJS','Asuransi','Gaji','Bonus','Freelance','THR'] as $name)<tr class="border-b"><td class="p-4 font-bold">{{ $name }}</td><td class="p-4"><span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600">Default</span></td><td class="p-4">#10B981</td><td class="p-4 text-slate-500">Kategori {{ $name }}</td><td class="p-4">Default</td></tr>@endforeach</tbody></table></x-card>
+@endsection

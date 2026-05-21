@@ -1,0 +1,6 @@
+Tambahkan ke theme.extend.colors di tailwind.config.js jika project masih memakai Tailwind config JS:
+fam: {
+  primary: '#10B981', dark: '#059669', soft: '#D1FAE5',
+  blue: '#2563EB', purple: '#8B5CF6', warning: '#F59E0B',
+  danger: '#EF4444', ink: '#0F172A', muted: '#64748B', line: '#E2E8F0', bg: '#F8FAFC'
+}
