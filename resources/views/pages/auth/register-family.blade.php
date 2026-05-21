@@ -116,18 +116,20 @@
                         Informasi Keluarga
                     </h3>
                     <div class="auth-family-grid">
-                        <div class="auth-register-grid">
-                            <label class="auth-plain-field">
-                                <span>Nama Keluarga</span>
-                                <input name="family_name" value="{{ old('family_name') }}"
-                                    placeholder="Contoh: Keluarga Pratama" required>
-                            </label>
-                            <label class="auth-plain-field">
-                                <span>Kode Keluarga</span>
-                                <input name="family_code" value="{{ old('family_code') }}"
-                                    placeholder="Contoh: PRATAMA2024">
-                                <small>Digunakan untuk mengundang anggota keluarga.</small>
-                            </label>
+                        <div class="auth-register-grid auth-family-fields">
+                            <div class="auth-family-top-row">
+                                <label class="auth-plain-field">
+                                    <span>Nama Keluarga</span>
+                                    <input name="family_name" value="{{ old('family_name') }}"
+                                        placeholder="Contoh: Keluarga Pratama" required>
+                                </label>
+                                <label class="auth-plain-field auth-family-code-field">
+                                    <span>Kode Keluarga</span>
+                                    <input name="family_code" value="{{ old('family_code') }}"
+                                        placeholder="Contoh: PRATAMA2024">
+                                    <small>Digunakan untuk mengundang anggota keluarga.</small>
+                                </label>
+                            </div>
                             <label class="auth-plain-field auth-wide-field">
                                 <span>Alamat</span>
                                 <textarea name="address" rows="3" placeholder="Contoh: Jl. Melati No. 10, RT 02/RW 05"

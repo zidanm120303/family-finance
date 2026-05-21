@@ -4448,6 +4448,13 @@ svg {
   gap: 1rem;
 }
 
+.auth-family-top-row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
 .auth-plain-field {
   position: relative;
 }
@@ -4494,6 +4501,10 @@ svg {
   color: #64748B;
   font-size: 0.72rem;
   font-weight: 700;
+}
+
+.auth-family-code-field small {
+  white-space: nowrap;
 }
 
 .auth-wide-field {
@@ -5064,6 +5075,7 @@ svg {
   }
 
   .auth-register-grid,
+  .auth-family-top-row,
   .auth-register-actions,
   .auth-register-side {
     grid-template-columns: 1fr;
