@@ -4451,8 +4451,18 @@ svg {
 .auth-family-top-row {
   display: grid;
   grid-column: 1 / -1;
+  align-items: start;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
+}
+
+.auth-family-top-row .auth-plain-field {
+  align-content: start;
+}
+
+.auth-family-top-row .auth-plain-field input {
+  height: 3.25rem;
+  min-height: 3.25rem;
 }
 
 .auth-plain-field {
