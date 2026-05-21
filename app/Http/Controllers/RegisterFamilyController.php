@@ -35,6 +35,7 @@ class RegisterFamilyController extends Controller
             'city' => ['required', 'string', 'max:80'],
             'province' => ['required', 'string', 'max:80'],
             'postal_code' => ['required', 'string', 'max:20'],
+            'family_phone' => ['nullable', 'string', 'max:30'],
             'create_defaults' => ['nullable', 'boolean'],
         ]);
 
@@ -51,7 +52,7 @@ class RegisterFamilyController extends Controller
                 'city' => $data['city'],
                 'province' => $data['province'],
                 'postal_code' => $data['postal_code'],
-                'phone' => $data['phone'] ?? null,
+                'phone' => $data['family_phone'] ?? $data['phone'] ?? null,
             ]);
 
             $user = User::create([

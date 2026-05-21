@@ -13,76 +13,158 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="bg-slate-50 font-[Inter] text-slate-950">
-    <main class="min-h-screen grid lg:grid-cols-2">
-        <section class="relative overflow-hidden bg-emerald-50 px-5 py-8 sm:px-8 sm:py-10 lg:px-16 lg:py-14">
-            <img src="{{ asset('assets/svg/logo-famfinance.svg') }}" class="h-14 w-fit" alt="FamFinance">
-            <div class="mt-8 max-w-2xl sm:mt-12">
-                <h1 class="font-display text-3xl font-extrabold leading-tight sm:text-4xl lg:text-6xl">Keuangan keluarga
-                    rapi dalam satu ruang bersama.</h1>
-                <p class="mt-4 text-base leading-7 text-slate-600 sm:mt-5 sm:text-lg sm:leading-8">Pantau saldo,
-                    anggaran, riwayat transaksi, dan dompet keluarga dengan data yang transparan.</p>
+<body class="auth-body">
+    <main class="auth-login-page">
+        <section class="auth-login-showcase">
+            <img src="{{ asset('assets/svg/logo-famfinance.svg') }}" class="auth-login-logo" alt="FamFinance">
+
+            <div class="auth-login-copy">
+                <h1>Kelola keuangan keluarga <span>lebih mudah, bersama-sama.</span></h1>
+                <p>Catat pemasukan, atur pengeluaran, rencanakan anggaran, dan capai tujuan keuangan keluarga dengan
+                    transparan.</p>
             </div>
-            <img src="{{ asset('assets/illustration/login-family-illustration.png') }}"
-                class="mt-8 h-56 w-full max-w-2xl object-contain object-left sm:mt-10 sm:h-[300px] lg:h-[340px]"
-                alt="Ilustrasi keluarga">
-            <div class="grid max-w-3xl gap-4 sm:grid-cols-3">
-                <div class="rounded-3xl border border-white/70 bg-white/80 p-5 shadow-sm">
-                    <div class="text-2xl font-extrabold">8+</div>
-                    <p class="mt-1 text-sm font-semibold text-slate-500">Kategori siap pakai</p>
-                </div>
-                <div class="rounded-3xl border border-white/70 bg-white/80 p-5 shadow-sm">
-                    <div class="text-2xl font-extrabold">4</div>
-                    <p class="mt-1 text-sm font-semibold text-slate-500">Role keluarga</p>
-                </div>
-                <div class="rounded-3xl border border-white/70 bg-white/80 p-5 shadow-sm">
-                    <div class="text-2xl font-extrabold">100%</div>
-                    <p class="mt-1 text-sm font-semibold text-slate-500">Blade Laravel</p>
+
+            <div class="auth-family-visual">
+                <img src="{{ asset('assets/illustration/login-family-illustration.png') }}" alt="Ilustrasi keluarga">
+            </div>
+
+            <div class="auth-login-metrics">
+                <article>
+                    <span class="auth-metric-icon auth-metric-green">
+                        <img src="{{ asset('assets/svg/icon-wallet.svg') }}" alt="">
+                    </span>
+                    <div>
+                        <small>Total Saldo</small>
+                        <strong>Rp 24.580.000</strong>
+                        <em>Naik 8,5% dari bulan lalu</em>
+                    </div>
+                </article>
+                <article>
+                    <span class="auth-metric-icon auth-metric-red">
+                        <img src="{{ asset('assets/svg/icon-expense.svg') }}" alt="">
+                    </span>
+                    <div>
+                        <small>Pengeluaran Bulan Ini</small>
+                        <strong>Rp 11.230.000</strong>
+                        <em>Naik 5,6% dari bulan lalu</em>
+                    </div>
+                </article>
+                <article>
+                    <span class="auth-metric-icon auth-metric-amber">
+                        <img src="{{ asset('assets/svg/icon-budget.svg') }}" alt="">
+                    </span>
+                    <div>
+                        <small>Anggaran Bulan Ini</small>
+                        <strong>Rp 7.520.000</strong>
+                        <em>32% dari total anggaran</em>
+                    </div>
+                </article>
+            </div>
+
+            <div class="auth-feature-strip">
+                <article>
+                    <span class="auth-feature-icon auth-feature-green">
+                        <img src="{{ asset('assets/svg/icon-shield.svg') }}" alt="">
+                    </span>
+                    <div>
+                        <strong>Aman</strong>
+                        <p>Data keluarga Anda dienkripsi dan terlindungi.</p>
+                    </div>
+                </article>
+                <article>
+                    <span class="auth-feature-icon auth-feature-blue">
+                        <img src="{{ asset('assets/svg/icon-lightning.svg') }}" alt="">
+                    </span>
+                    <div>
+                        <strong>Mudah</strong>
+                        <p>Kelola keuangan keluarga kapan saja, di mana saja.</p>
+                    </div>
+                </article>
+                <article>
+                    <span class="auth-feature-icon auth-feature-purple">
+                        <img src="{{ asset('assets/svg/icon-budget.svg') }}" alt="">
+                    </span>
+                    <div>
+                        <strong>Transparan</strong>
+                        <p>Semua transaksi jelas dan bisa dilihat bersama.</p>
+                    </div>
+                </article>
+            </div>
+
+            <div class="auth-trust-row">
+                <p><span></span> Dipercaya oleh ribuan keluarga di Indonesia</p>
+                <div>
+                    <b>B</b><b>S</b><b>R</b><b>A</b><b>D</b>
+                    <strong>*****</strong>
+                    <span>4.9/5 dari 2.500+ keluarga</span>
                 </div>
             </div>
         </section>
 
-        <section class="flex items-center justify-center p-4 sm:p-6 lg:p-10">
-            <form method="POST" action="{{ route('login.store') }}"
-                class="w-full max-w-xl rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_24px_60px_rgba(15,23,42,0.10)] sm:p-8 lg:p-10">
+        <section class="auth-login-panel">
+            <form method="POST" action="{{ route('login.store') }}" class="auth-login-card" x-data="{ showPassword: false }">
                 @csrf
-                <div class="text-center">
-                    <img src="{{ asset('assets/svg/logo-famfinance.svg') }}"
-                        class="w-24 md:w-64 h-auto object-cover mx-auto" alt="FamFinance">
-                    <h2 class="mt-8 font-display text-3xl font-extrabold sm:text-4xl">Masuk ke Akun</h2>
-                    <p class="mt-3 text-slate-500">Gunakan akun dummy: budi.pratama@email.com / password</p>
+                <div class="auth-form-heading">
+                    <img src="{{ asset('assets/svg/logo-famfinance.svg') }}" alt="FamFinance">
+                    <h2>Masuk ke Akun</h2>
+                    <p>Selamat datang kembali! Kelola keuangan keluarga Anda dengan mudah dan aman.</p>
                 </div>
 
                 @if ($errors->any())
-                    <div
-                        class="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
-                        {{ $errors->first() }}
-                    </div>
+                    <div class="auth-error-box">{{ $errors->first() }}</div>
                 @endif
 
-                <label class="mt-8 block text-sm font-extrabold text-slate-700">
-                    Email atau Username
-                    <input name="login" value="{{ old('login') }}" class="form-field mt-2"
-                        placeholder="budi.pratama@email.com" autofocus>
+                <label class="auth-field">
+                    <span>Email atau Username</span>
+                    <i>
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M20 21a8 8 0 0 0-16 0" />
+                            <path d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+                        </svg>
+                        <input name="login" value="{{ old('login') }}" placeholder="Masukkan email atau username Anda"
+                            autofocus required>
+                    </i>
                 </label>
-                <label class="mt-5 block text-sm font-extrabold text-slate-700">
-                    Password
-                    <input name="password" type="password" class="form-field mt-2" placeholder="Masukkan password">
+
+                <label class="auth-field">
+                    <span>Password</span>
+                    <i>
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M7 11V8a5 5 0 0 1 10 0v3" />
+                            <path d="M5 11h14v10H5z" />
+                        </svg>
+                        <input name="password" :type="showPassword ? 'text' : 'password'"
+                            placeholder="Masukkan password Anda" required>
+                        <button type="button" @click="showPassword = !showPassword" title="Tampilkan password">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" />
+                                <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                            </svg>
+                        </button>
+                    </i>
                 </label>
-                <div class="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm">
-                    <label class="flex items-center gap-2 font-semibold text-slate-500">
-                        <input name="remember" value="1" type="checkbox"
-                            class="rounded border-slate-300 text-emerald-600">
+
+                <div class="auth-login-options">
+                    <label>
+                        <input name="remember" value="1" type="checkbox">
                         Ingat saya
                     </label>
-                    <span class="font-extrabold text-emerald-600">Lupa password?</span>
+                    <span>Lupa password?</span>
                 </div>
-                <x-button type="submit" class="mt-8 w-full py-4">Masuk</x-button>
-                <button type="button"
-                    class="mt-4 w-full rounded-2xl border border-slate-200 py-4 font-extrabold text-slate-700">Masuk
-                    dengan Google</button>
-                <p class="mt-6 text-center text-slate-500">Belum punya akun? <a href="{{ route('register-family') }}"
-                        class="font-extrabold text-emerald-600">Daftar keluarga</a></p>
+
+                <button type="submit" class="auth-submit-button">Masuk</button>
+
+                <div class="auth-divider"><span>atau</span></div>
+
+                <button type="button" class="auth-google-button">
+                    <strong>G</strong>
+                    Masuk dengan Google
+                </button>
+
+                <p class="auth-switch-link">
+                    Belum punya akun?
+                    <a href="{{ route('register-family') }}">Daftar</a>
+                </p>
             </form>
         </section>
     </main>
