@@ -1,435 +1,187 @@
 @extends('layouts.app')
+
+@php
+    $icons = [
+        'icon-wallet.svg' => 'Dompet',
+        'icon-income.svg' => 'Pemasukan',
+        'icon-expense.svg' => 'Pengeluaran',
+        'icon-budget.svg' => 'Anggaran',
+        'icon-category-health.svg' => 'Kesehatan',
+        'icon-lightning.svg' => 'Listrik',
+        'icon-wifi.svg' => 'Internet',
+        'icon-shield.svg' => 'Proteksi',
+        'icon-family.svg' => 'Keluarga',
+    ];
+    $fieldClass = 'form-control mt-2';
+    $labelClass = 'block min-w-0 text-xs font-bold text-slate-700';
+@endphp
+
+@section('title', 'Kategori - FamFinance')
 @section('page_title', 'Kategori')
-@section('page_subtitle', 'Dashboard > Kategori')
+@section('page_subtitle', 'Kategori')
+
 @section('content')
-    @php
-        $typeLabels = [
-            'expense' => 'Pengeluaran',
-            'income' => 'Pemasukan',
-        ];
-        $typeDescriptions = [
-            'expense' => 'Kelola kategori pengeluaran untuk mencatat dan menganalisis keuangan keluarga dengan lebih baik.',
-            'income' => 'Kelola kategori pemasukan agar sumber dana keluarga mudah dipantau setiap bulan.',
-        ];
-        $iconOptions = [
-            ['label' => 'Dompet', 'value' => 'icon-wallet.svg', 'url' => asset('assets/svg/icon-wallet.svg')],
-            ['label' => 'Pemasukan', 'value' => 'icon-income.svg', 'url' => asset('assets/svg/icon-income.svg')],
-            ['label' => 'Pengeluaran', 'value' => 'icon-expense.svg', 'url' => asset('assets/svg/icon-expense.svg')],
-            ['label' => 'Anggaran', 'value' => 'icon-budget.svg', 'url' => asset('assets/svg/icon-budget.svg')],
-            ['label' => 'Listrik', 'value' => 'icon-lightning.svg', 'url' => asset('assets/svg/icon-lightning.svg')],
-            ['label' => 'Internet', 'value' => 'icon-wifi.svg', 'url' => asset('assets/svg/icon-wifi.svg')],
-            ['label' => 'Perisai', 'value' => 'icon-shield.svg', 'url' => asset('assets/svg/icon-shield.svg')],
-            ['label' => 'Kesehatan', 'value' => 'icon-category-health.svg', 'url' => asset('assets/svg/icon-category-health.svg')],
-        ];
-        $colorOptions = ['#3B82F6', '#8B5CF6', '#F43F5E', '#F59E0B', '#22C55E', '#14B8A6', '#94A3B8'];
-        $categoryPayload = $categories
-            ->map(
-                fn ($category) => [
-                    'id' => $category->id,
-                    'category_name' => $category->category_name,
-                    'type' => $category->type,
-                    'type_label' => $typeLabels[$category->type] ?? ucfirst($category->type),
-                    'icon' => $category->icon ?: 'icon-wallet.svg',
-                    'icon_url' => asset('assets/svg/' . ($category->icon ?: 'icon-wallet.svg')),
-                    'color' => $category->color ?: '#10B981',
-                    'description' => $category->description ?: '',
-                    'is_default' => (bool) $category->is_default,
-                    'transactions_count' => $category->transactions_count,
-                    'update_url' => route('categories.update', $category),
-                    'destroy_url' => route('categories.destroy', $category),
-                ],
-            )
-            ->values();
-        $totalCategories = $categories->count();
-    @endphp
-
-    <div class="categories-page"
-        x-data="categoryPage({
-            categories: @js($categoryPayload),
-            iconOptions: @js($iconOptions),
-            colorOptions: @js($colorOptions),
-            typeDescriptions: @js($typeDescriptions),
-            storeUrl: @js(route('categories.store')),
-        })"
-        x-init="init()">
-        <section class="category-workspace">
-            <div class="category-tabs">
-                <button type="button" class="category-tab category-tab-expense" @click="setType('expense')"
-                    :class="{ 'is-active': activeType === 'expense' }">
-                    <span class="category-tab-icon">
-                        <img src="{{ asset('assets/svg/icon-expense.svg') }}" alt="">
-                    </span>
-                    Pengeluaran
+    <div class="page-stack" x-data="{ tab: @js(request('type', 'expense')), addOpen: false }">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex min-w-0 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1">
+                <button type="button" @click="tab = 'expense'"
+                    class="h-9 min-w-40 rounded-lg px-4 text-xs font-bold transition"
+                    :class="tab === 'expense' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'">
+                    Kategori Pengeluaran <span class="ml-1 opacity-75">({{ $expenseCategories->count() }})</span>
                 </button>
-                <button type="button" class="category-tab category-tab-income" @click="setType('income')"
-                    :class="{ 'is-active': activeType === 'income' }">
-                    <span class="category-tab-icon">
-                        <img src="{{ asset('assets/svg/icon-income.svg') }}" alt="">
-                    </span>
-                    Pemasukan
+                <button type="button" @click="tab = 'income'"
+                    class="h-9 min-w-40 rounded-lg px-4 text-xs font-bold transition"
+                    :class="tab === 'income' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'">
+                    Kategori Pemasukan <span class="ml-1 opacity-75">({{ $incomeCategories->count() }})</span>
                 </button>
             </div>
-
-            <div class="category-toolbar">
-                <p x-text="typeDescriptions[activeType]"></p>
-                <div class="category-toolbar-actions">
-                    <form method="POST" action="{{ route('categories.import-default') }}">
-                        @csrf
-                        <button type="submit" class="category-soft-button">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M12 3v10m0 0 4-4m-4 4-4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" />
-                            </svg>
-                            Import Default
-                        </button>
-                    </form>
-                    <button type="button" class="category-primary-button" @click="startCreate()">
-                        <span>+</span>
-                        Tambah Kategori
-                    </button>
-                </div>
+            <div class="flex gap-2">
+                <form method="POST" action="{{ route('categories.import-default') }}">
+                    @csrf
+                    <button class="secondary-action">Import Default</button>
+                </form>
+                <button type="button" @click="addOpen = true" class="primary-action">+ Tambah Kategori</button>
             </div>
+        </div>
 
-            <x-card class="category-table-card">
-                <div class="category-table-wrap">
-                    <table class="category-table">
-                        <thead>
-                            <tr>
-                                <th>Kategori</th>
-                                <th>Tipe</th>
-                                <th>Warna</th>
-                                <th>Deskripsi</th>
-                                <th>Status</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($categories as $category)
-                                @php
-                                    $categoryColor = $category->color ?: ($category->type === 'income' ? '#10B981' : '#F43F5E');
-                                    $categoryBg = preg_match('/^#[0-9A-Fa-f]{6}$/', $categoryColor)
-                                        ? $categoryColor . '18'
-                                        : '#F8FAFC';
-                                    $categoryIcon = $category->icon ?: ($category->type === 'income' ? 'icon-income.svg' : 'icon-expense.svg');
-                                    $typeTone = $category->type === 'income' ? 'income' : 'expense';
-                                @endphp
-                                <tr x-show="activeType === '{{ $category->type }}'" x-cloak class="category-table-row"
-                                    @click="selectCategory({{ $category->id }})"
-                                    :class="{ 'is-active': selected && selected.id === {{ $category->id }} }">
-                                    <td data-label="Kategori">
-                                        <div class="category-name-cell">
-                                            <span class="category-list-icon"
-                                                style="--category-color: {{ $categoryColor }}; --category-bg: {{ $categoryBg }};">
-                                                <img src="{{ asset('assets/svg/' . $categoryIcon) }}" alt="">
-                                            </span>
-                                            <div class="min-w-0">
-                                                <strong>{{ $category->category_name }}</strong>
-                                                <span>{{ $category->transactions_count }} transaksi</span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td data-label="Tipe">
-                                        <span class="category-type-pill category-type-{{ $typeTone }}">
-                                            {{ $typeLabels[$category->type] ?? ucfirst($category->type) }}
-                                        </span>
-                                    </td>
-                                    <td data-label="Warna">
-                                        <span class="category-color-cell">
-                                            <i style="background: {{ $categoryColor }}"></i>
-                                            {{ $categoryColor }}
-                                        </span>
-                                    </td>
-                                    <td data-label="Deskripsi" class="category-description-cell">
-                                        {{ $category->description ?: 'Belum ada deskripsi' }}
-                                    </td>
-                                    <td data-label="Status">
-                                        <span class="category-status category-status-{{ $category->is_default ? 'default' : 'custom' }}">
-                                            {{ $category->is_default ? 'Default' : 'Custom' }}
-                                        </span>
-                                    </td>
-                                    <td data-label="Aksi">
-                                        <div class="category-row-actions">
-                                            <button type="button" class="category-action-icon" title="Edit kategori"
-                                                @click.stop="selectCategory({{ $category->id }})">
-                                                <svg viewBox="0 0 24 24" aria-hidden="true">
-                                                    <path d="m4 20 4.4-1 10.3-10.3a2.1 2.1 0 0 0-3-3L5.4 16 4 20Z" />
-                                                    <path d="m14.5 6.5 3 3" />
-                                                </svg>
-                                            </button>
-                                            <form method="POST" action="{{ route('categories.destroy', $category) }}"
-                                                onsubmit="return confirm('Hapus kategori ini?')" @click.stop>
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="category-action-icon category-action-danger"
-                                                    title="Hapus kategori" @disabled($category->is_default)>
-                                                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                                                        <path d="M4 7h16" />
-                                                        <path d="M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" />
-                                                    </svg>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
+        <section class="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_310px]">
+            @foreach ([['type' => 'expense', 'title' => 'Kategori Pengeluaran', 'items' => $expenseCategories, 'description' => 'Kelompokkan seluruh biaya keluarga agar laporan lebih mudah dibaca.'], ['type' => 'income', 'title' => 'Kategori Pemasukan', 'items' => $incomeCategories, 'description' => 'Kelompokkan seluruh sumber pendapatan keluarga.']] as $group)
+                <x-card class="overflow-hidden" x-show="tab === '{{ $group['type'] }}'" x-cloak>
+                    <div class="ff-card-header">
+                        <div>
+                            <h2 class="section-heading">{{ $group['title'] }}</h2>
+                            <p class="ff-muted mt-1">{{ $group['description'] }}</p>
+                        </div>
+                        <span
+                            class="rounded-full bg-slate-100 px-3 py-1.5 text-[10px] font-bold text-slate-600">{{ $group['items']->count() }}
+                            kategori</span>
+                    </div>
+                    <div class="ff-table-wrap">
+                        <table class="ff-table min-w-[760px]">
+                            <thead>
                                 <tr>
-                                    <td colspan="6" class="category-empty">Belum ada kategori.</td>
+                                    <th>Kategori</th>
+                                    <th>Deskripsi</th>
+                                    <th class="text-center">Transaksi</th>
+                                    <th>Tipe</th>
+                                    <th>Status</th>
+                                    <th class="text-center">Aksi</th>
                                 </tr>
-                            @endforelse
-                            @if ($categories->isNotEmpty())
-                                <tr x-show="filteredCount() === 0" x-cloak>
-                                    <td colspan="6" class="category-empty">
-                                        Belum ada kategori <span x-text="activeTypeLabel().toLowerCase()"></span>.
-                                    </td>
-                                </tr>
-                            @endif
-                        </tbody>
-                    </table>
-                </div>
-                <div class="category-table-footer">
-                    <span x-text="filteredSummary()"></span>
-                    <div class="category-pagination">
-                        <button type="button" disabled>&lsaquo;</button>
-                        <button type="button" class="is-active">1</button>
-                        <button type="button" disabled>&rsaquo;</button>
+                            </thead>
+                            <tbody>
+                                @forelse($group['items'] as $category)
+                                    <tr>
+                                        <td>
+                                            <div class="flex items-center gap-3">
+                                                <div>
+                                                    <b
+                                                        class="block whitespace-nowrap text-slate-950">{{ $category->category_name }}</b>
+
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="max-w-[260px]">
+                                            <p class="line-clamp-2 text-[11px] leading-5">
+                                                {{ $category->description ?: 'Tanpa deskripsi' }}</p>
+                                        </td>
+                                        <td class="text-center font-bold">{{ $category->transactions_count }}</td>
+                                        <td><x-badge
+                                                tone="{{ $category->type === 'income' ? 'income' : 'expense' }}">{{ $category->type === 'income' ? 'Pemasukan' : 'Pengeluaran' }}</x-badge>
+                                        </td>
+                                        <td><span
+                                                class="inline-flex items-center gap-2 text-[10px] font-bold text-emerald-700"><i
+                                                    class="h-2 w-2 rounded-full bg-emerald-500"></i>Aktif</span></td>
+                                        <td>
+                                            <details class="group relative">
+                                                <summary class="ff-icon-button mx-auto h-8 w-8 cursor-pointer list-none">⋮
+                                                </summary>
+                                                <div
+                                                    class="absolute right-0 z-20 mt-1 w-64 rounded-xl border border-slate-200 bg-white p-3 text-left shadow-xl">
+                                                    <form method="POST"
+                                                        action="{{ route('categories.update', $category) }}"
+                                                        class="grid gap-2">
+                                                        @csrf @method('PUT')
+                                                        <input name="category_name" value="{{ $category->category_name }}"
+                                                            class="form-control" required>
+                                                        <div class="grid grid-cols-2 gap-2">
+                                                            <select name="type" class="form-control">
+                                                                <option value="expense" @selected($category->type === 'expense')>
+                                                                    Pengeluaran</option>
+                                                                <option value="income" @selected($category->type === 'income')>
+                                                                    Pemasukan</option>
+                                                            </select>
+                                                            <input name="color" type="color"
+                                                                value="{{ $category->color ?: '#10B981' }}"
+                                                                class="h-11 w-full rounded-xl border border-slate-200 p-1">
+                                                        </div>
+                                                        <select name="icon" class="form-control">
+                                                            @foreach ($icons as $icon => $label)
+                                                                <option value="{{ $icon }}"
+                                                                    @selected(($category->icon ?: 'icon-wallet.svg') === $icon)>{{ $label }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                        <textarea name="description" rows="2" class="form-control h-16 py-2">{{ $category->description }}</textarea>
+                                                        <button class="primary-action w-full">Simpan Perubahan</button>
+                                                    </form>
+                                                    <form method="POST"
+                                                        action="{{ route('categories.destroy', $category) }}"
+                                                        class="mt-2" onsubmit="return confirm('Hapus kategori ini?')">
+                                                        @csrf @method('DELETE')
+                                                        <button class="danger-action w-full"
+                                                            @disabled($category->is_default || $category->transactions_count > 0)>Hapus</button>
+                                                    </form>
+                                                </div>
+                                            </details>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6">
+                                            <div class="ff-empty">Belum ada kategori.</div>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </x-card>
+            @endforeach
+
+            <x-card class="hidden p-5 xl:block">
+                <div class="flex items-center gap-3">
+                    <span class="grid h-9 w-9 place-items-center rounded-xl bg-emerald-50"><img
+                            src="{{ asset('assets/svg/icon-category-health.svg') }}" class="h-5 w-5" alt=""></span>
+                    <div>
+                        <h2 class="text-sm font-extrabold">Tambah Kategori</h2>
+                        <p class="mt-1 text-[10px] text-slate-500">Buat kategori keluarga baru</p>
                     </div>
                 </div>
+                @include('pages.categories.partials.create-form', [
+                    'fieldClass' => $fieldClass,
+                    'labelClass' => $labelClass,
+                    'icons' => $icons,
+                ])
             </x-card>
         </section>
 
-        <aside class="category-detail-panel">
-            <div class="category-detail-heading">
-                <h2 x-text="mode === 'create' ? 'Tambah Kategori' : 'Detail Kategori'"></h2>
-                <button type="button" class="category-panel-close" @click="startCreate()" title="Reset panel">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M6 6l12 12M18 6 6 18" />
-                    </svg>
-                </button>
-            </div>
-
-            <form id="category-editor-form" method="POST" :action="formAction()" class="category-editor-form">
-                @csrf
-                <input type="hidden" :name="mode === 'edit' ? '_method' : '_request_method'" value="PATCH">
-                <input type="hidden" name="icon" x-model="form.icon">
-                <input type="hidden" name="color" x-model="form.color">
-
-                <div class="category-preview-block">
-                    <span class="category-preview-icon" :style="`--category-color: ${form.color || '#10B981'}`">
-                        <img :src="iconUrlFor(form.icon)" alt="">
-                    </span>
-                    <button type="button" class="category-soft-button category-change-icon">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M12 3v3m0 12v3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M3 12h3m12 0h3M5.6 18.4l2.1-2.1m8.6-8.6 2.1-2.1" />
-                        </svg>
-                        Ubah Ikon
-                    </button>
-                </div>
-
-                <label class="category-field">
-                    <span>Nama Kategori <b>*</b></span>
-                    <input name="category_name" maxlength="100" required x-model="form.category_name">
-                    <em x-text="`${(form.category_name || '').length}/100`"></em>
-                </label>
-
-                <label class="category-field">
-                    <span>Tipe <b>*</b></span>
-                    <select name="type" required x-model="form.type" @change="activeType = form.type">
-                        <option value="expense">Pengeluaran</option>
-                        <option value="income">Pemasukan</option>
-                    </select>
-                </label>
-
-                <label class="category-field">
-                    <span>Deskripsi</span>
-                    <textarea name="description" rows="4" maxlength="150" x-model="form.description"></textarea>
-                    <em x-text="`${(form.description || '').length}/150`"></em>
-                </label>
-
-                <div class="category-picker-group">
-                    <span>Pilih Ikon</span>
-                    <div class="category-icon-strip">
-                        <template x-for="icon in iconOptions.slice(0, 6)" :key="`strip-${icon.value}`">
-                            <button type="button" @click="form.icon = icon.value" :class="{ 'is-active': form.icon === icon.value }">
-                                <img :src="icon.url" :alt="icon.label">
-                            </button>
-                        </template>
+        <div x-show="addOpen" x-cloak>
+            <button type="button" class="fixed inset-0 z-40 bg-slate-950/40" @click="addOpen = false"
+                aria-label="Tutup panel"></button>
+            <aside class="ff-drawer p-5" x-transition>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="section-heading">Tambah Kategori</h2>
+                        <p class="ff-muted mt-1">Buat kategori keluarga baru.</p>
                     </div>
-                    <div class="category-icon-grid">
-                        <template x-for="icon in iconOptions" :key="icon.value">
-                            <button type="button" @click="form.icon = icon.value" :class="{ 'is-active': form.icon === icon.value }">
-                                <img :src="icon.url" :alt="icon.label">
-                            </button>
-                        </template>
-                    </div>
+                    <button type="button" class="ff-icon-button" @click="addOpen = false">×</button>
                 </div>
-
-                <div class="category-picker-group">
-                    <span>Pilih Warna</span>
-                    <div class="category-color-picker">
-                        <template x-for="color in colorOptions" :key="color">
-                            <button type="button" :style="`background: ${color}`" @click="form.color = color"
-                                :class="{ 'is-active': form.color === color }">
-                                <i></i>
-                            </button>
-                        </template>
-                    </div>
-                </div>
-
-                <div class="category-picker-group">
-                    <span>Status</span>
-                    <label class="category-radio-card" :class="{ 'is-active': form.is_default }">
-                        <input type="radio" disabled :checked="form.is_default">
-                        <span>
-                            <strong>Default</strong>
-                            <small>Kategori bawaan sistem tidak dapat dihapus</small>
-                        </span>
-                    </label>
-                    <label class="category-radio-card" :class="{ 'is-active': !form.is_default }">
-                        <input type="radio" disabled :checked="!form.is_default">
-                        <span>
-                            <strong>Custom</strong>
-                            <small>Kategori buatan sendiri dapat dihapus</small>
-                        </span>
-                    </label>
-                </div>
-            </form>
-
-            <div class="category-panel-footer">
-                <button type="button" class="category-soft-button category-cancel-button" @click="resetForm()">Batal</button>
-                <button type="submit" form="category-editor-form" class="category-primary-button">
-                    <span x-text="mode === 'create' ? 'Simpan Kategori' : 'Simpan Perubahan'"></span>
-                </button>
-            </div>
-        </aside>
+                @include('pages.categories.partials.create-form', [
+                    'fieldClass' => $fieldClass,
+                    'labelClass' => $labelClass,
+                    'icons' => $icons,
+                ])
+            </aside>
+        </div>
     </div>
 @endsection
-
-@push('scripts')
-    <script>
-        window.categoryPage = (config) => ({
-            categories: config.categories || [],
-            iconOptions: config.iconOptions || [],
-            colorOptions: config.colorOptions || [],
-            typeDescriptions: config.typeDescriptions || {},
-            storeUrl: config.storeUrl,
-            activeType: 'expense',
-            mode: 'edit',
-            selected: null,
-            form: {},
-
-            init() {
-                const firstExpense = this.categories.find((category) => category.type === 'expense');
-                const firstCategory = firstExpense || this.categories[0];
-
-                if (firstCategory) {
-                    this.selectCategory(firstCategory.id);
-                    return;
-                }
-
-                this.startCreate();
-            },
-
-            setType(type) {
-                this.activeType = type;
-                const firstMatchingCategory = this.categories.find((category) => category.type === type);
-
-                if (this.mode === 'create') {
-                    this.form.type = type;
-                    this.form.icon = this.defaultIcon();
-                    this.form.color = this.defaultColor();
-                    return;
-                }
-
-                if (firstMatchingCategory) {
-                    this.selectCategory(firstMatchingCategory.id);
-                    return;
-                }
-
-                this.startCreate();
-            },
-
-            selectCategory(id) {
-                const category = this.categories.find((item) => item.id === id);
-
-                if (!category) {
-                    this.startCreate();
-                    return;
-                }
-
-                this.mode = 'edit';
-                this.selected = category;
-                this.activeType = category.type;
-                this.form = {
-                    category_name: category.category_name,
-                    type: category.type,
-                    icon: category.icon || this.defaultIcon(),
-                    color: category.color || this.defaultColor(),
-                    description: category.description || '',
-                    is_default: Boolean(category.is_default),
-                };
-            },
-
-            startCreate() {
-                this.mode = 'create';
-                this.selected = null;
-                this.form = {
-                    category_name: '',
-                    type: this.activeType,
-                    icon: this.defaultIcon(),
-                    color: this.defaultColor(),
-                    description: '',
-                    is_default: false,
-                };
-            },
-
-            resetForm() {
-                if (this.selected) {
-                    this.selectCategory(this.selected.id);
-                    return;
-                }
-
-                this.startCreate();
-            },
-
-            formAction() {
-                if (this.mode === 'edit' && this.selected) {
-                    return this.selected.update_url;
-                }
-
-                return this.storeUrl;
-            },
-
-            defaultIcon() {
-                return this.activeType === 'income' ? 'icon-income.svg' : 'icon-expense.svg';
-            },
-
-            defaultColor() {
-                return this.activeType === 'income' ? '#10B981' : '#F43F5E';
-            },
-
-            iconUrlFor(iconValue) {
-                const selectedIcon = this.iconOptions.find((icon) => icon.value === iconValue);
-                const fallbackIcon = this.iconOptions.find((icon) => icon.value === this.defaultIcon()) || this.iconOptions[0];
-
-                return (selectedIcon || fallbackIcon || {}).url || '';
-            },
-
-            filteredCount() {
-                return this.categories.filter((category) => category.type === this.activeType).length;
-            },
-
-            activeTypeLabel() {
-                return this.activeType === 'income' ? 'Pemasukan' : 'Pengeluaran';
-            },
-
-            filteredSummary() {
-                const count = this.filteredCount();
-
-                if (count === 0) {
-                    return `Menampilkan 0 kategori ${this.activeTypeLabel().toLowerCase()}`;
-                }
-
-                return `Menampilkan 1 - ${count} dari ${count} kategori ${this.activeTypeLabel().toLowerCase()}`;
-            },
-        });
-    </script>
-@endpush

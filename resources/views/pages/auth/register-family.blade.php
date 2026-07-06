@@ -1,281 +1,185 @@
 <!doctype html>
 <html lang="id">
-
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Daftar - FamFinance</title>
+    <title>Daftar Keluarga - FamFinance</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
+<body class="bg-slate-50 font-[Inter] text-slate-950 antialiased">
+    @php
+        $fieldClass = 'mt-1.5 h-10 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 outline-none transition placeholder:font-medium placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100';
+        $labelClass = 'block min-w-0 text-[11px] font-bold text-slate-700';
+    @endphp
 
-<body class="auth-body">
-    <main class="auth-register-page">
-        <header class="auth-register-topbar">
-            <a href="{{ route('login') }}">
-                <img src="{{ asset('assets/svg/logo-famfinance.svg') }}" alt="FamFinance">
-            </a>
-            <div>
-                <span>Butuh bantuan?</span>
-                <button type="button">Pusat Bantuan</button>
-            </div>
-        </header>
+    <header class="flex h-[70px] items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-7">
+        <a href="{{ route('login') }}"><img src="{{ asset('assets/svg/logo-famfinance.svg') }}" class="h-11 w-auto" alt="FamFinance"></a>
+        <div class="flex items-center gap-3 text-[11px] font-medium text-slate-500">
+            <span class="hidden sm:inline">Butuh bantuan?</span>
+            <span class="rounded-lg border border-slate-200 px-3 py-2 font-bold text-slate-700">Pusat Bantuan</span>
+        </div>
+    </header>
 
-        <section class="auth-register-hero">
-            <h1>Daftar & Buat Keluarga</h1>
-            <p>Buat akun Anda dan siapkan keluarga untuk mulai mengelola keuangan bersama.</p>
-        </section>
+    <main class="mx-auto w-full max-w-[1280px] px-4 py-7 sm:px-6 lg:px-8">
+        <div class="text-center">
+            <h1 class="font-['Plus_Jakarta_Sans'] text-2xl font-extrabold">Daftar &amp; Buat Keluarga</h1>
+            <p class="mt-2 text-xs font-medium text-slate-500">Buat akun Anda dan siapkan keluarga untuk mulai mengelola keuangan bersama.</p>
+        </div>
 
-        <section class="auth-register-steps">
-            <article class="is-active">
-                <span>1</span>
-                <strong>Akun</strong>
-                <p>Buat akun Anda</p>
-            </article>
-            <article>
-                <span>2</span>
-                <strong>Data Keluarga</strong>
-                <p>Lengkapi informasi keluarga</p>
-            </article>
-            <article>
-                <span>3</span>
-                <strong>Preferensi</strong>
-                <p>Atur preferensi awal</p>
-            </article>
-        </section>
+        <div class="mx-auto mt-6 grid max-w-4xl grid-cols-3 gap-2 sm:gap-4">
+            @foreach([
+                ['1', 'Akun', 'Buat akun Anda', true],
+                ['2', 'Data Keluarga', 'Lengkapi informasi keluarga', false],
+                ['3', 'Preferensi', 'Atur preferensi awal', false],
+            ] as [$number, $title, $text, $active])
+                <div class="relative min-w-0">
+                    @if(!$loop->last)
+                        <span class="absolute left-7 right-[-1rem] top-3 h-px {{ $active ? 'bg-emerald-500' : 'bg-slate-200' }}"></span>
+                    @endif
+                    <div class="relative">
+                        <span class="grid h-6 w-6 place-items-center rounded-full border text-[10px] font-extrabold {{ $active ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-white text-slate-600' }}">{{ $number }}</span>
+                        <strong class="mt-2 block truncate text-[11px] {{ $active ? 'text-emerald-700' : 'text-slate-700' }}">{{ $title }}</strong>
+                        <span class="mt-0.5 hidden text-[9px] font-medium text-slate-500 sm:block">{{ $text }}</span>
+                    </div>
+                </div>
+            @endforeach
+        </div>
 
-        <div class="auth-register-layout">
-            <form method="POST" action="{{ route('register-family.store') }}" class="auth-register-card"
-                x-data="{ showPassword: false, showConfirm: false }">
-                @csrf
-                <div class="auth-register-card-head">
-                    <h2>Informasi Akun & Keluarga</h2>
-                    <p><span></span> Data Anda aman dan hanya digunakan untuk keperluan akun.</p>
+        <form method="POST" action="{{ route('register-family.store') }}" class="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_350px]" x-data="{ showPassword: false, showConfirm: false }">
+            @csrf
+            <section class="ff-card p-4 sm:p-5">
+                <div>
+                    <h2 class="text-sm font-extrabold">Informasi Akun &amp; Keluarga</h2>
+                    <p class="mt-1 flex items-center gap-2 text-[10px] font-medium text-slate-500">
+                        <img src="{{ asset('assets/svg/icon-shield.svg') }}" class="h-3.5 w-3.5" alt="">
+                        Data Anda aman dan hanya digunakan untuk keperluan akun.
+                    </p>
                 </div>
 
                 @if ($errors->any())
-                    <div class="auth-error-box">{{ $errors->first() }}</div>
+                    <div class="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{{ $errors->first() }}</div>
                 @endif
 
-                <section class="auth-form-section">
-                    <h3>
-                        <img src="{{ asset('assets/svg/icon-family.svg') }}" alt="">
-                        Informasi Akun
-                    </h3>
-                    <div class="auth-register-grid">
-                        <label class="auth-plain-field">
-                            <span>Nama Lengkap</span>
-                            <input name="name" value="{{ old('name') }}" placeholder="Contoh: Budi Pratama" required>
-                        </label>
-                        <label class="auth-plain-field">
-                            <span>Email</span>
-                            <input name="email" type="email" value="{{ old('email') }}"
-                                placeholder="Contoh: budi.pratama@email.com" required>
-                        </label>
-                        <label class="auth-plain-field">
-                            <span>Username</span>
-                            <input name="username" value="{{ old('username') }}" placeholder="Contoh: budipratama">
-                        </label>
-                        <label class="auth-plain-field auth-phone-field">
-                            <span>Nomor HP</span>
-                            <i>+62</i>
-                            <input name="phone" value="{{ old('phone') }}" placeholder="812-3456-7890">
-                        </label>
-                        <label class="auth-plain-field">
-                            <span>Password</span>
-                            <button type="button" @click="showPassword = !showPassword" title="Tampilkan password">
-                                <svg viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" />
-                                    <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-                                </svg>
-                            </button>
-                            <input name="password" :type="showPassword ? 'text' : 'password'"
-                                placeholder="Buat password minimal 8 karakter" required>
-                        </label>
-                        <label class="auth-plain-field">
-                            <span>Konfirmasi Password</span>
-                            <button type="button" @click="showConfirm = !showConfirm" title="Tampilkan konfirmasi">
-                                <svg viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" />
-                                    <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-                                </svg>
-                            </button>
-                            <input name="password_confirmation" :type="showConfirm ? 'text' : 'password'"
-                                placeholder="Ulangi password Anda" required>
-                        </label>
-                    </div>
-                </section>
+                <div class="mt-5 flex items-center gap-2 text-xs font-extrabold">
+                    <img src="{{ asset('assets/svg/icon-family.svg') }}" class="h-4 w-4" alt=""> Informasi Akun
+                </div>
+                <div class="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    <label class="{{ $labelClass }}">Nama Lengkap
+                        <input name="name" value="{{ old('name') }}" class="{{ $fieldClass }}" placeholder="Contoh: Budi Pratama" required>
+                    </label>
+                    <label class="{{ $labelClass }}">Email
+                        <input name="email" type="email" value="{{ old('email') }}" class="{{ $fieldClass }}" placeholder="budi.pratama@email.com" required>
+                    </label>
+                    <label class="{{ $labelClass }}">Username
+                        <input name="username" value="{{ old('username') }}" class="{{ $fieldClass }}" placeholder="budipratama">
+                    </label>
+                    <label class="{{ $labelClass }}">Nomor HP
+                        <input name="phone" value="{{ old('phone') }}" class="{{ $fieldClass }}" placeholder="0812-3456-7890">
+                    </label>
+                    <label class="{{ $labelClass }}">Password
+                        <span class="mt-1.5 flex h-10 items-center rounded-lg border border-slate-200 px-3 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-100">
+                            <input name="password" :type="showPassword ? 'text' : 'password'" class="min-w-0 flex-1 border-0 bg-transparent text-xs font-semibold outline-none placeholder:font-medium placeholder:text-slate-400" placeholder="Minimal 8 karakter" required>
+                            <button type="button" @click="showPassword = !showPassword" class="text-[10px] font-bold text-emerald-700">Lihat</button>
+                        </span>
+                    </label>
+                    <label class="{{ $labelClass }}">Konfirmasi Password
+                        <span class="mt-1.5 flex h-10 items-center rounded-lg border border-slate-200 px-3 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-100">
+                            <input name="password_confirmation" :type="showConfirm ? 'text' : 'password'" class="min-w-0 flex-1 border-0 bg-transparent text-xs font-semibold outline-none placeholder:font-medium placeholder:text-slate-400" placeholder="Ulangi password Anda" required>
+                            <button type="button" @click="showConfirm = !showConfirm" class="text-[10px] font-bold text-emerald-700">Lihat</button>
+                        </span>
+                    </label>
+                </div>
 
-                <section class="auth-form-section">
-                    <h3>
-                        <img src="{{ asset('assets/svg/icon-family.svg') }}" alt="">
-                        Informasi Keluarga
-                    </h3>
-                    <div class="auth-family-grid">
-                        <div class="auth-register-grid auth-family-fields">
-                            <div class="auth-family-top-row">
-                                <label class="auth-plain-field">
-                                    <span>Nama Keluarga</span>
-                                    <input name="family_name" value="{{ old('family_name') }}"
-                                        placeholder="Contoh: Keluarga Pratama" required>
-                                </label>
-                                <label class="auth-plain-field auth-family-code-field">
-                                    <span>Kode Keluarga</span>
-                                    <input name="family_code" value="{{ old('family_code') }}"
-                                        placeholder="Contoh: PRATAMA2024">
-                                    <small>Digunakan untuk mengundang anggota keluarga.</small>
-                                </label>
+                <div class="mt-5 flex items-center gap-2 text-xs font-extrabold">
+                    <img src="{{ asset('assets/svg/icon-family.svg') }}" class="h-4 w-4" alt=""> Informasi Keluarga
+                </div>
+                <div class="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-12">
+                    <label class="{{ $labelClass }} xl:col-span-5">Nama Keluarga
+                        <input name="family_name" value="{{ old('family_name') }}" class="{{ $fieldClass }}" placeholder="Contoh: Keluarga Pratama" required>
+                    </label>
+                    <label class="{{ $labelClass }} xl:col-span-4">Kode Keluarga
+                        <input name="family_code" value="{{ old('family_code') }}" class="{{ $fieldClass }}" placeholder="PRATAMA2026">
+                    </label>
+                    <div class="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3 sm:row-span-3 xl:col-span-3 xl:row-span-3">
+                        <strong class="text-[11px] text-emerald-800">Peran Anda</strong>
+                        <div class="mt-3 flex items-start gap-2.5">
+                            <span class="mt-0.5 h-4 w-4 rounded-full border-[4px] border-emerald-600 bg-white"></span>
+                            <div>
+                                <b class="block text-[11px]">Kepala Keluarga</b>
+                                <p class="mt-1 text-[9px] font-medium leading-4 text-slate-500">Akses penuh untuk mengelola keuangan, anggota, dan pengaturan keluarga.</p>
                             </div>
-                            <label class="auth-plain-field auth-wide-field">
-                                <span>Alamat</span>
-                                <textarea name="address" rows="3" placeholder="Contoh: Jl. Melati No. 10, RT 02/RW 05"
-                                    required>{{ old('address') }}</textarea>
-                            </label>
-                            <label class="auth-plain-field">
-                                <span>Kota</span>
-                                <input name="city" value="{{ old('city') }}" placeholder="Contoh: Jakarta Selatan"
-                                    required>
-                            </label>
-                            <label class="auth-plain-field">
-                                <span>Provinsi</span>
-                                <input name="province" value="{{ old('province') }}" placeholder="Contoh: DKI Jakarta"
-                                    required>
-                            </label>
-                            <label class="auth-plain-field">
-                                <span>Kode Pos</span>
-                                <input name="postal_code" value="{{ old('postal_code') }}" placeholder="Contoh: 12450"
-                                    required>
-                            </label>
-                            <label class="auth-plain-field">
-                                <span>Telepon Keluarga (Opsional)</span>
-                                <input name="family_phone" value="{{ old('family_phone') }}" placeholder="Contoh: 021-1234567">
-                            </label>
                         </div>
-
-                        <aside class="auth-role-card">
-                            <h3>Peran Anda dalam Keluarga</h3>
-                            <p>Pilih peran Anda untuk menentukan hak akses di dalam keluarga.</p>
-                            <label class="is-selected">
-                                <input type="radio" checked disabled>
-                                <span>
-                                    <strong>Kepala Keluarga</strong>
-                                    <small>Memiliki akses penuh untuk mengelola keuangan keluarga dan mengundang anggota
-                                        lainnya.</small>
-                                </span>
-                            </label>
-                            <label>
-                                <input type="radio" disabled>
-                                <span>
-                                    <strong>Anggota Keluarga</strong>
-                                    <small>Dapat melihat dan mencatat transaksi sesuai izin yang diberikan.</small>
-                                </span>
-                            </label>
-                        </aside>
                     </div>
-                </section>
-
-                <section class="auth-preference-card">
-                    <h3>Pengaturan Awal</h3>
-                    <label>
-                        <span class="auth-pref-icon">
-                            <img src="{{ asset('assets/svg/icon-category-health.svg') }}" alt="">
-                        </span>
-                        <span>
-                            <strong>Buat kategori default</strong>
-                            <small>Gunakan kategori pemasukan dan pengeluaran standar untuk memudahkan pencatatan.</small>
-                        </span>
-                        <input name="create_defaults" value="1" type="checkbox" checked>
+                    <label class="{{ $labelClass }} sm:col-span-2 xl:col-span-9">Alamat
+                        <textarea name="address" rows="2" class="{{ $fieldClass }} h-16 py-2.5" placeholder="Contoh: Jl. Melati No. 10" required>{{ old('address') }}</textarea>
                     </label>
-                    <label>
-                        <span class="auth-pref-icon">
-                            <img src="{{ asset('assets/svg/icon-family.svg') }}" alt="">
-                        </span>
-                        <span>
-                            <strong>Undang anggota keluarga nanti</strong>
-                            <small>Anda dapat mengundang anggota keluarga kapan saja setelah pendaftaran selesai.</small>
-                        </span>
-                        <input type="checkbox" checked>
+                    <label class="{{ $labelClass }} xl:col-span-3">Kota
+                        <input name="city" value="{{ old('city') }}" class="{{ $fieldClass }}" placeholder="Jakarta Selatan" required>
                     </label>
-                </section>
-
-                <div class="auth-register-actions">
-                    <a href="{{ route('login') }}">
-                        <span>&larr;</span>
-                        Kembali ke Login
-                    </a>
-                    <button type="submit">
-                        Buat Akun & Keluarga
-                        <span>&rarr;</span>
-                    </button>
+                    <label class="{{ $labelClass }} xl:col-span-3">Provinsi
+                        <input name="province" value="{{ old('province') }}" class="{{ $fieldClass }}" placeholder="DKI Jakarta" required>
+                    </label>
+                    <label class="{{ $labelClass }} xl:col-span-3">Kode Pos
+                        <input name="postal_code" value="{{ old('postal_code') }}" class="{{ $fieldClass }}" placeholder="12450" required>
+                    </label>
+                    <label class="{{ $labelClass }} xl:col-span-4">Telepon Keluarga (Opsional)
+                        <input name="family_phone" value="{{ old('family_phone') }}" class="{{ $fieldClass }}" placeholder="021-1234567">
+                    </label>
                 </div>
 
-                <p class="auth-register-terms">
-                    Dengan membuat akun, Anda menyetujui
-                    <a href="#">Syarat & Ketentuan</a>
-                    dan
-                    <a href="#">Kebijakan Privasi</a>
-                    kami.
-                </p>
-            </form>
-
-            <aside class="auth-register-side">
-                <div class="auth-register-illustration">
-                    <img src="{{ asset('assets/illustration/family-finance-security-illustration.png') }}"
-                        alt="Ilustrasi keluarga">
-                </div>
-                <h2>Kelola keuangan keluarga <span>lebih mudah bersama FamFinance</span></h2>
-                <div class="auth-benefit-list">
-                    <article>
-                        <span class="auth-benefit-green">
-                            <img src="{{ asset('assets/svg/icon-wallet.svg') }}" alt="">
+                <div class="mt-5 rounded-xl border border-slate-200 p-3">
+                    <strong class="text-[11px]">Pengaturan Awal</strong>
+                    <label class="mt-2 flex items-center justify-between gap-4 rounded-lg bg-slate-50 p-3">
+                        <span class="flex min-w-0 items-start gap-3">
+                            <img src="{{ asset('assets/svg/icon-category-health.svg') }}" class="h-7 w-7 shrink-0" alt="">
+                            <span>
+                                <b class="block text-[10px]">Buat kategori default</b>
+                                <span class="text-[9px] font-medium text-slate-500">Gunakan kategori pemasukan dan pengeluaran standar.</span>
+                            </span>
                         </span>
-                        <div>
-                            <strong>Transparansi Keuangan</strong>
-                            <p>Semua pemasukan dan pengeluaran tercatat jelas dan dapat dilihat bersama.</p>
-                        </div>
-                    </article>
-                    <article>
-                        <span class="auth-benefit-red">
-                            <img src="{{ asset('assets/svg/icon-expense.svg') }}" alt="">
-                        </span>
-                        <div>
-                            <strong>Perencanaan Lebih Baik</strong>
-                            <p>Susun anggaran, pantau pengeluaran, dan capai tujuan keuangan keluarga.</p>
-                        </div>
-                    </article>
-                    <article>
-                        <span class="auth-benefit-blue">
-                            <img src="{{ asset('assets/svg/icon-shield.svg') }}" alt="">
-                        </span>
-                        <div>
-                            <strong>Aman & Terlindungi</strong>
-                            <p>Data Anda dienkripsi dan tidak dibagikan ke pihak ketiga.</p>
-                        </div>
-                    </article>
-                    <article>
-                        <span class="auth-benefit-amber">
-                            <img src="{{ asset('assets/svg/icon-budget.svg') }}" alt="">
-                        </span>
-                        <div>
-                            <strong>Akses Fleksibel</strong>
-                            <p>Kelola keuangan di mana saja, kapan saja melalui perangkat favorit Anda.</p>
-                        </div>
-                    </article>
+                        <input name="create_defaults" value="1" type="checkbox" class="h-5 w-5 shrink-0 rounded-full border-slate-300 text-emerald-600 focus:ring-emerald-500" @checked(old('create_defaults', true))>
+                    </label>
                 </div>
 
-                <div class="auth-start-tip">
-                    <h3>Tips Memulai</h3>
-                    <p>Isi data dengan benar untuk pengalaman terbaik</p>
-                    <p>Gunakan kode keluarga untuk mengundang anggota lainnya</p>
-                    <p>Anda bisa mengubah pengaturan kapan saja di menu Pengaturan</p>
+                <div class="mt-4 grid gap-3 sm:grid-cols-[.75fr_1.25fr]">
+                    <a href="{{ route('login') }}" class="secondary-action">← Kembali ke Login</a>
+                    <button class="primary-action">Buat Akun &amp; Keluarga <span aria-hidden="true">→</span></button>
+                </div>
+                <p class="mt-3 text-center text-[9px] font-medium text-slate-500">Dengan membuat akun, Anda menyetujui <span class="text-emerald-600">Syarat &amp; Ketentuan</span> dan <span class="text-emerald-600">Kebijakan Privasi</span>.</p>
+            </section>
+
+            <aside class="ff-card p-5 lg:sticky lg:top-5">
+                <img src="{{ asset('assets/illustration/family-finance-security-illustration.png') }}" class="mx-auto h-40 w-full object-contain" alt="Keluarga FamFinance">
+                <h2 class="mt-1 text-center font-['Plus_Jakarta_Sans'] text-lg font-extrabold leading-7">Kelola keuangan keluarga<br>lebih mudah bersama <span class="text-emerald-600">FamFinance</span></h2>
+                <div class="mt-5 grid gap-4">
+                    @foreach([
+                        ['Transparansi Keuangan', 'Semua pemasukan dan pengeluaran tercatat jelas dan dapat dilihat bersama.', 'icon-wallet.svg', 'bg-emerald-50'],
+                        ['Perencanaan Lebih Baik', 'Susun anggaran, pantau pengeluaran, dan capai tujuan keuangan keluarga.', 'icon-expense.svg', 'bg-rose-50'],
+                        ['Aman & Terlindungi', 'Data keluarga dilindungi dan akses dikelola berdasarkan peran.', 'icon-shield.svg', 'bg-blue-50'],
+                        ['Akses Fleksibel', 'Kelola keuangan kapan saja melalui perangkat favorit Anda.', 'icon-budget.svg', 'bg-amber-50'],
+                    ] as [$title, $text, $icon, $tone])
+                        <div class="flex gap-3">
+                            <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl {{ $tone }}"><img src="{{ asset('assets/svg/'.$icon) }}" class="h-5 w-5" alt=""></span>
+                            <div>
+                                <strong class="text-[11px]">{{ $title }}</strong>
+                                <p class="mt-1 text-[9px] font-medium leading-4 text-slate-500">{{ $text }}</p>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                <div class="mt-5 rounded-xl border border-emerald-100 bg-emerald-50/60 p-4">
+                    <strong class="text-[11px] text-emerald-800">Tips Memulai</strong>
+                    <ul class="mt-2 grid gap-2 text-[9px] font-medium leading-4 text-slate-500">
+                        <li>✓ Isi data dengan benar untuk pengalaman terbaik</li>
+                        <li>✓ Gunakan kode keluarga untuk identitas keluarga</li>
+                        <li>✓ Pengaturan dapat diubah kapan saja</li>
+                    </ul>
                 </div>
             </aside>
-        </div>
+        </form>
     </main>
 </body>
-
 </html>

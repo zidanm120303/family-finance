@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('transactions', function (Blueprint $table) {
@@ -21,7 +22,7 @@ return new class extends Migration {
             $table->date('transaction_date');
             $table->string('attachment')->nullable();
             $table->enum('payment_method', ['cash', 'e-wallet', 'bank']);
-            $table->enum('status', ['pending', 'success', 'cancel'])->default('pending');
+            $table->enum('status', ['success', 'cancel'])->default('success');
             $table->timestamps();
             $table->index(['family_id', 'transaction_date', 'type', 'status']);
         });

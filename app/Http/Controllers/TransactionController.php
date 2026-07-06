@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Category, Transaction, TransactionHistory, Wallet};
+use App\Models\Category;
+use App\Models\Transaction;
+use App\Models\TransactionHistory;
+use App\Models\Wallet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -84,6 +87,7 @@ class TransactionController extends Controller
     public function create(Request $request): View
     {
         $familyId = $request->user()->family_id;
+
         return view('pages.transactions.create', [
             'categories' => Category::where('family_id', $familyId)->orderBy('type')->orderBy('category_name')->get(),
             'wallets' => Wallet::where('family_id', $familyId)->get(),
@@ -207,7 +211,12 @@ class TransactionController extends Controller
     private function validatedData(Request $request, int $familyId): array
     {
         return $request->validate([
-            'category_id' => ['required', Rule::exists('categories', 'id')->where('family_id', $familyId)],
+            'category_id' => [
+                'required',
+                Rule::exists('categories', 'id')
+                    ->where('family_id', $familyId)
+                    ->where('type', $request->input('type')),
+            ],
             'wallet_id' => ['nullable', Rule::exists('wallets', 'id')->where('family_id', $familyId)],
             'type' => ['required', 'in:income,expense'],
             'amount' => ['required', 'numeric', 'min:1'],
@@ -215,7 +224,7 @@ class TransactionController extends Controller
             'description' => ['nullable', 'string', 'max:500'],
             'transaction_date' => ['required', 'date'],
             'payment_method' => ['required', 'in:cash,e-wallet,bank'],
-            'status' => ['required', 'in:pending,success,cancel'],
+            'status' => ['required', 'in:success,cancel'],
             'attachment' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
         ]);
     }

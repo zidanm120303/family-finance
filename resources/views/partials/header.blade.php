@@ -2,59 +2,68 @@
     $user = auth()->user();
 @endphp
 
-<header
-    class="sticky top-0 z-30 min-h-18 bg-white/95 border-b border-slate-200 px-4 py-3 backdrop-blur sm:px-5 lg:min-h-20 lg:px-6 lg:py-4 flex items-center justify-between gap-3">
+<header class="sticky top-0 z-30 flex min-h-[88px] items-center justify-between gap-4 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur sm:px-5 lg:px-7">
     <div class="flex min-w-0 items-center gap-3">
         <button type="button"
-            class="relative flex h-11 w-11 shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl border border-slate-200 bg-white shadow-sm lg:hidden"
+            class="ff-icon-button lg:hidden"
             @click="openMobileMenu()" :aria-expanded="mobileMenuOpen.toString()" aria-controls="mobile-navigation-drawer"
             aria-label="Buka menu">
-            <span class="hamburger-line"></span>
-            <span class="hamburger-line"></span>
-            <span class="hamburger-line"></span>
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
         </button>
         <div class="min-w-0">
-            <h1 class="truncate text-xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans'] sm:text-2xl">
-                @yield('page_title', 'Dashboard')</h1>
-            <p class="mt-1 line-clamp-1 text-sm text-slate-500">@yield('page_subtitle', 'Selamat datang kembali, ' . $user?->name)</p>
+            <h1 class="ff-page-title truncate">@yield('page_title', 'Dashboard')</h1>
+            <div class="mt-1 flex min-w-0 items-center gap-2 text-[11px] font-medium text-slate-500">
+                <a href="{{ route('dashboard') }}" class="hidden hover:text-emerald-700 sm:inline">Dashboard</a>
+                <svg class="hidden h-3 w-3 sm:block" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="m9 18 6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span class="truncate">@yield('page_subtitle', 'Selamat datang kembali, ' . $user?->name)</span>
+            </div>
         </div>
     </div>
-    <div class="hidden xl:flex items-center gap-3">
 
-        <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3.5 py-2">
-            <div class="h-9 w-9 rounded-full bg-emerald-100 grid place-items-center font-bold text-emerald-700">
-                {{ str($user?->name ?? 'FF')->substr(0, 2)->upper() }}</div>
-            <div class="text-left">
-                <div class="font-bold text-sm">{{ $user?->name }}</div>
-                <div class="text-xs text-slate-500">{{ $user?->role?->role_name ?? 'Anggota' }}</div>
+    <div class="flex shrink-0 items-center gap-2 sm:gap-3">
+        <form method="GET" action="{{ route('transactions.index') }}" class="relative hidden xl:block">
+            <svg class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+                <path d="m20 20-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <input name="search" value="{{ request()->routeIs('transactions.index') ? request('search') : '' }}"
+                class="h-11 w-[310px] rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-xs font-medium text-slate-700 outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                placeholder="Cari transaksi, kategori, atau anggota...">
+        </form>
+
+        <button type="button" class="ff-icon-button relative hidden sm:grid" aria-label="Notifikasi">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-rose-500 px-1 text-[9px] font-extrabold text-white">3</span>
+        </button>
+
+        <div class="hidden items-center gap-3 rounded-xl border border-slate-200 bg-white p-1.5 pr-3 md:flex">
+            <div class="grid h-9 w-9 place-items-center rounded-full bg-emerald-100 text-xs font-extrabold text-emerald-700">
+                {{ str($user?->name ?? 'FF')->substr(0, 2)->upper() }}
+            </div>
+            <div class="min-w-0 xl:min-w-28">
+                <div class="max-w-32 truncate text-xs font-extrabold text-slate-950">{{ $user?->name }}</div>
+                <div class="mt-0.5 max-w-32 truncate text-[10px] font-medium text-slate-500">{{ $user?->role?->role_name ?? 'Anggota' }}</div>
             </div>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button
-                    class="rounded-2xl border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-                    aria-label="Keluar">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                <button class="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-50 hover:text-rose-600" aria-label="Keluar">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M14 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-3M10 12h11m0 0-3-3m3 3-3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </button>
             </form>
         </div>
-    </div>
-    <div class="hidden shrink-0 items-center gap-2 lg:flex xl:hidden">
-        <a href="{{ route('transactions.create') }}"
-            class="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-600 text-xl font-extrabold text-white"
-            aria-label="Tambah transaksi">+</a>
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button
-                class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs font-extrabold text-slate-600">Keluar</button>
-        </form>
-    </div>
-    <div class="flex shrink-0 items-center gap-2 lg:hidden">
-        <a href="{{ route('transactions.create') }}"
-            class="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-600 text-xl font-extrabold text-white"
-            aria-label="Tambah transaksi">+</a>
+
+        <a href="{{ route('transactions.create') }}" class="grid h-10 w-10 place-items-center rounded-xl bg-emerald-600 text-white md:hidden" aria-label="Tambah transaksi">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+        </a>
     </div>
 </header>

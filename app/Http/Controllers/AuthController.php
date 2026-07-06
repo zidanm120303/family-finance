@@ -29,7 +29,7 @@ class AuthController extends Controller
             ->orWhere('username', $credentials['login'])
             ->first();
 
-        if (! $user || ! Hash::check($credentials['password'], $user->password)) {
+        if (! $user || ! $this->passwordMatches($user, $credentials['password'])) {
             return back()
                 ->withErrors(['login' => 'Email, username, atau password tidak sesuai.'])
                 ->onlyInput('login');
@@ -55,5 +55,28 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
+    }
+
+    private function passwordMatches(User $user, string $plainPassword): bool
+    {
+        $passwordHash = (string) $user->password;
+
+        if (str_starts_with($passwordHash, '$2a$')) {
+            $normalizedHash = '$2y$'.substr($passwordHash, 4);
+
+            if (! password_verify($plainPassword, $normalizedHash)) {
+                return false;
+            }
+
+            $user->forceFill(['password' => Hash::make($plainPassword)])->save();
+
+            return true;
+        }
+
+        if ((password_get_info($passwordHash)['algoName'] ?? 'unknown') !== 'bcrypt') {
+            return false;
+        }
+
+        return Hash::check($plainPassword, $passwordHash);
     }
 }

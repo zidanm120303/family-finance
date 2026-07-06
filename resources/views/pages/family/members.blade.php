@@ -1,250 +1,233 @@
 @extends('layouts.app')
-@section('page_title', 'Anggota Keluarga')
-@section('page_subtitle', 'Kelola anggota keluarga dan akses aplikasi FamFinance.')
-@section('content')
-    @php
-        $roleMeta = [
-            'Kepala Keluarga' => [
-                'tone' => 'green',
-                'icon' => 'KK',
-                'description' => 'Akses penuh ke semua fitur dan pengaturan.',
-            ],
-            'Ibu' => ['tone' => 'rose', 'icon' => 'IB', 'description' => 'Kelola transaksi, anggaran, dan laporan.'],
-            'Anak' => [
-                'tone' => 'amber',
-                'icon' => 'AK',
-                'description' => 'Akses terbatas, dapat melihat dan input tertentu.',
-            ],
-            'Admin Keluarga' => [
-                'tone' => 'purple',
-                'icon' => 'AD',
-                'description' => 'Kelola anggota, role, dan pengaturan keluarga.',
-            ],
-        ];
-        $roleTone = fn($roleName) => $roleMeta[$roleName]['tone'] ?? 'slate';
-        $currentUserId = auth()->id();
-    @endphp
 
-    <div class="family-page" x-data="{ showForm: false }">
-        <section class="family-summary-grid">
-            <x-card class="family-info-card">
-                <div class="family-card-title">
-                    <span class="family-title-icon family-title-green">
-                        <img src="{{ asset('assets/svg/icon-family.svg') }}" alt="">
-                    </span>
-                    <h2>Ringkasan Keluarga</h2>
+@php
+    $roleStyles = [
+        'Kepala Keluarga' => ['bg-emerald-50 text-emerald-700', '♛'],
+        'Ibu Rumah Tangga' => ['bg-rose-50 text-rose-700', '●'],
+        'Anak' => ['bg-amber-50 text-amber-700', '◉'],
+    ];
+@endphp
+
+@section('title', 'Anggota Keluarga - FamFinance')
+@section('page_title', 'Anggota Keluarga')
+@section('page_subtitle', 'Kelola anggota keluarga dan akses aplikasi FamFinance')
+
+@section('content')
+    <div class="page-stack" x-data="{ addOpen: false }">
+        <section class="grid min-w-0 gap-4 xl:grid-cols-[390px_minmax(0,1fr)]">
+            <x-card class="p-5">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-4">
+                    <span class="grid h-9 w-9 place-items-center rounded-full bg-emerald-50"><img
+                            src="{{ asset('assets/svg/icon-family.svg') }}" class="h-5 w-5" alt=""></span>
+                    <h2 class="text-sm font-extrabold">Ringkasan Keluarga</h2>
                 </div>
-                <dl class="family-info-list">
-                    <div>
-                        <dt>Kode Keluarga</dt>
-                        <dd>
-                            <span class="family-code">{{ $family?->family_code ?? '-' }}</span>
+                <dl class="grid divide-y divide-slate-100 text-[11px]">
+                    <div class="grid grid-cols-[120px_1fr] gap-3 py-3">
+                        <dt class="font-medium text-slate-500">Kode Keluarga</dt>
+                        <dd><span
+                                class="rounded-lg bg-emerald-50 px-2 py-1 font-bold text-emerald-700">{{ $family?->family_code ?? '-' }}</span>
                         </dd>
                     </div>
-                    <div>
-                        <dt>Nama Keluarga</dt>
-                        <dd>{{ $family?->family_name ?? '-' }}</dd>
+                    <div class="grid grid-cols-[120px_1fr] gap-3 py-3">
+                        <dt class="font-medium text-slate-500">Nama Keluarga</dt>
+                        <dd class="font-bold text-slate-800">{{ $family?->family_name ?? '-' }}</dd>
                     </div>
-                    <div>
-                        <dt>Alamat</dt>
-                        <dd>{{ collect([$family?->address, $family?->city, $family?->province, $family?->postal_code])->filter()->join(', ') ?:'-' }}
-                        </dd>
+                    <div class="grid grid-cols-[120px_1fr] gap-3 py-3">
+                        <dt class="font-medium text-slate-500">Alamat</dt>
+                        <dd class="font-medium leading-5 text-slate-700">{{ $family?->city ?? '-' }},
+                            {{ $family?->province ?? '-' }} {{ $family?->postal_code }}</dd>
                     </div>
-                    <div>
-                        <dt>Jumlah Anggota</dt>
-                        <dd>{{ $allMembers->count() }} orang</dd>
+                    <div class="grid grid-cols-[120px_1fr] gap-3 py-3">
+                        <dt class="font-medium text-slate-500">Jumlah Anggota</dt>
+                        <dd class="font-bold text-slate-800">{{ $allMembers->count() }} orang</dd>
                     </div>
                 </dl>
             </x-card>
 
-            <x-card class="family-role-card">
-                <div class="family-card-title">
-                    <span class="family-title-icon family-title-purple">
-                        <img src="{{ asset('assets/svg/icon-shield.svg') }}" alt="">
-                    </span>
+            <x-card class="p-5">
+                <div class="flex items-center gap-3">
+                    <span class="grid h-9 w-9 place-items-center rounded-full bg-violet-50"><img
+                            src="{{ asset('assets/svg/icon-shield.svg') }}" class="h-5 w-5" alt=""></span>
                     <div>
-                        <h2>Ringkasan Role</h2>
-                        <p>Setiap role memiliki akses dan izin yang berbeda.</p>
+                        <h2 class="text-sm font-extrabold">Ringkasan Role</h2>
+                        <p class="mt-1 text-[10px] text-slate-500">Tiga role resmi dengan akses yang berbeda.</p>
                     </div>
                 </div>
-                <div class="family-role-grid">
-                    @foreach ($roles as $role)
-                        @php
-                            $meta = $roleMeta[$role->role_name] ?? [
-                                'tone' => 'slate',
-                                'icon' => 'RL',
-                                'description' => $role->description ?: 'Role keluarga.',
-                            ];
-                        @endphp
-                        <article class="family-role-item family-role-{{ $meta['tone'] }}">
-                            <span>{{ $meta['icon'] }}</span>
-                            <div>
-                                <strong>{{ $role->role_name }}</strong>
-                                <p>{{ $meta['description'] }}</p>
+                <div class="mt-4 grid gap-3 md:grid-cols-3">
+                    @forelse($roles as $role)
+                        @php([$style, $symbol] = $roleStyles[$role->role_name] ?? ['bg-slate-50 text-slate-700', '●'])
+                        <article class="rounded-xl border border-slate-200 p-3">
+                            <div class="flex items-start gap-3">
+                                <span
+                                    class="grid h-10 w-10 shrink-0 place-items-center rounded-full text-lg {{ $style }}">{{ $symbol }}</span>
+                                <div class="min-w-0">
+                                    <div class="flex items-start justify-between gap-2"><b
+                                            class="text-[11px] leading-4">{{ $role->role_name }}</b><span
+                                            class="shrink-0 text-[9px] text-slate-400">{{ $role->family_users_count }}
+                                            anggota</span></div>
+                                    <p class="mt-2 line-clamp-2 text-[9px] font-medium leading-4 text-slate-500">
+                                        {{ $role->description }}</p>
+                                </div>
                             </div>
-                            <em>{{ $role->family_users_count }} anggota</em>
                         </article>
-                    @endforeach
+                    @empty
+                        <div class="ff-empty md:col-span-3">Belum ada role.</div>
+                    @endforelse
                 </div>
-                <a href="#family-members-table" class="family-role-link">Lihat detail izin setiap role &rarr;</a>
+
             </x-card>
         </section>
 
-        <section class="family-actions-row">
-            <div class="family-action-buttons">
-                <button type="button" class="family-primary-button" @click="showForm = !showForm">
-                    <span>+</span>
-                    Tambah Anggota
-                </button>
-                {{-- <button type="button" class="family-blue-button">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M4 6h16v12H4z" />
-                        <path d="m4 7 8 6 8-6" />
-                    </svg>
-                    Undang via Email
-                </button>
-                <button type="button" class="family-purple-button">
-                    <img src="{{ asset('assets/svg/icon-shield.svg') }}" alt="">
-                    Kelola Role
-                </button> --}}
+        <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div class="flex flex-wrap gap-2">
+                <button type="button" @click="addOpen = true" class="primary-action">+ Tambah Anggota</button>
+                <button type="button" @click="addOpen = true" class="secondary-action text-blue-600">✉ Undang via
+                    Email</button>
             </div>
-
-            <form method="GET" action="{{ route('family.members') }}" class="family-filter-form">
-                <label>
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="m21 21-4.5-4.5M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" />
+            <form method="GET" action="{{ route('family.members') }}"
+                class="grid min-w-0 gap-2 sm:grid-cols-[minmax(220px,1fr)_150px_auto]">
+                <label class="relative min-w-0">
+                    <svg class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                        viewBox="0 0 24 24" fill="none">
+                        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
+                        <path d="m20 20-4-4" stroke="currentColor" stroke-width="2" />
                     </svg>
-                    <input name="search" value="{{ request('search') }}" placeholder="Cari anggota...">
+                    <input name="search" value="{{ request('search') }}" class="form-control pl-10"
+                        placeholder="Cari anggota...">
                 </label>
-                <select name="status">
+                <select name="status" class="form-control">
                     <option value="">Semua Status</option>
                     <option value="1" @selected(request('status') === '1')>Aktif</option>
                     <option value="0" @selected(request('status') === '0')>Nonaktif</option>
                 </select>
-                <button type="submit" title="Filter">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M4 5h16l-6.5 7.5V19l-3 1v-7.5L4 5Z" />
-                    </svg>
-                </button>
+                <button class="secondary-action">Filter</button>
             </form>
-        </section>
+        </div>
 
-        <x-card class="family-form-card" x-show="showForm" x-cloak>
-            <div class="family-card-title">
-                <span class="family-title-icon family-title-green">
-                    <img src="{{ asset('assets/svg/icon-family.svg') }}" alt="">
-                </span>
-                <h2>Tambah Anggota Baru</h2>
+        <x-card class="overflow-hidden">
+            <div class="ff-card-header">
+                <div>
+                    <h2 class="section-heading">Daftar Anggota</h2>
+                    <p class="ff-muted mt-1">{{ $members->count() }} anggota ditampilkan</p>
+                </div>
             </div>
-            <form method="POST" action="{{ route('family.members.store') }}" class="family-member-form">
-                @csrf
-                <label><span>Nama</span><input name="name" required></label>
-                <label><span>Email</span><input name="email" type="email" required></label>
-                <label><span>Username</span><input name="username"></label>
-                <label><span>Nomor HP</span><input name="phone"></label>
-                <label>
-                    <span>Role</span>
-                    <select name="role_id" required>
-                        @foreach ($roles as $role)
-                            <option value="{{ $role->id }}">{{ $role->role_name }}</option>
-                        @endforeach
-                    </select>
-                </label>
-                <label><span>Password</span><input name="password" type="password" required></label>
-                <button type="submit" class="family-primary-button">Simpan Anggota</button>
-            </form>
-        </x-card>
-
-        <x-card class="family-table-card" id="family-members-table">
-            <div class="family-table-wrap">
-                <table class="family-table">
+            <div class="ff-table-wrap">
+                <table class="ff-table min-w-[1000px]">
                     <thead>
                         <tr>
-                            <th>Foto</th>
-                            <th>Nama</th>
+                            <th>Anggota</th>
                             <th>Email</th>
                             <th>Username</th>
                             <th>Role</th>
                             <th>Phone</th>
                             <th>Status</th>
                             <th>Last Login</th>
-                            <th>Aksi</th>
+                            <th class="text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse ($members as $member)
-                            @php
-                                $tone = $roleTone($member->role?->role_name);
-                            @endphp
+                        @forelse($members as $member)
+                            @php([$memberStyle] = $roleStyles[$member->role?->role_name] ?? ['bg-slate-50 text-slate-700', '●'])
                             <tr>
-                                <td data-label="Foto">
-                                    <span class="family-avatar">{{ str($member->name)->substr(0, 2)->upper() }}</span>
+                                <td>
+                                    <div class="flex items-center gap-3">
+                                        <span
+                                            class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-xs font-extrabold text-slate-700">{{ str($member->name)->substr(0, 2)->upper() }}</span>
+                                        <div><b class="block whitespace-nowrap text-slate-950">{{ $member->name }}</b><span
+                                                class="mt-1 block text-[9px] text-slate-500">{{ $member->role?->role_name ?? '-' }}
+                                                @if ($member->id === auth()->id())
+                                                    · Anda
+                                                @endif
+                                            </span>
+                                        </div>
+                                    </div>
                                 </td>
-                                <td data-label="Nama" class="family-name-cell">
-                                    <strong>{{ $member->name }}</strong>
-                                    @if ($member->id === $currentUserId)
-                                        <span>Anda</span>
-                                    @endif
-                                    <small>{{ $member->role?->role_name ?? '-' }}</small>
+                                <td class="whitespace-nowrap">{{ $member->email }}</td>
+                                <td class="whitespace-nowrap">{{ $member->username ?: '-' }}</td>
+                                <td><span
+                                        class="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[10px] font-bold {{ $memberStyle }}">{{ $member->role?->role_name ?? '-' }}</span>
                                 </td>
-                                <td data-label="Email">{{ $member->email }}</td>
-                                <td data-label="Username">{{ $member->username ?: '-' }}</td>
-                                <td data-label="Role">
-                                    <span class="family-role-badge family-badge-{{ $tone }}">
-                                        {{ $member->role?->role_name ?? '-' }}
-                                    </span>
+                                <td class="whitespace-nowrap">{{ $member->phone ?: '-' }}</td>
+                                <td><span
+                                        class="rounded-lg px-2.5 py-1.5 text-[10px] font-bold {{ $member->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">{{ $member->is_active ? 'Aktif' : 'Nonaktif' }}</span>
                                 </td>
-                                <td data-label="Phone">{{ $member->phone ?: '-' }}</td>
-                                <td data-label="Status">
-                                    <span class="family-status {{ $member->is_active ? 'is-active' : 'is-inactive' }}">
-                                        {{ $member->is_active ? 'Aktif' : 'Nonaktif' }}
-                                    </span>
+                                <td class="whitespace-nowrap">
+                                    {{ $member->last_login?->translatedFormat('d M Y') ?? '—' }}<span
+                                        class="mt-1 block text-[9px] text-slate-400">{{ $member->last_login?->format('H:i') }}</span>
                                 </td>
-                                <td data-label="Last Login">
-                                    {{ $member->last_login?->translatedFormat('d M Y') ?? '-' }}
-                                    @if ($member->last_login)
-                                        <small>{{ $member->last_login->format('H:i') }}</small>
-                                    @endif
-                                </td>
-                                <td data-label="Aksi">
-                                    <form method="POST" action="{{ route('family.members.update', $member) }}"
-                                        class="family-row-form">
-                                        @csrf
-                                        @method('PATCH')
-                                        <select name="role_id" title="Role">
-                                            @foreach ($roles as $role)
-                                                <option value="{{ $role->id }}" @selected($member->role_id === $role->id)>
-                                                    {{ $role->role_name }}</option>
-                                            @endforeach
-                                        </select>
-                                        <select name="is_active" title="Status">
-                                            <option value="1" @selected($member->is_active)>Aktif</option>
-                                            <option value="0" @selected(!$member->is_active)>Nonaktif</option>
-                                        </select>
-                                        <button type="submit" class="family-icon-button" title="Simpan">
-                                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                                <path d="m4 20 4.4-1 10.3-10.3a2.1 2.1 0 0 0-3-3L5.4 16 4 20Z" />
-                                            </svg>
-                                        </button>
-                                    </form>
+                                <td>
+                                    <details class="group relative">
+                                        <summary class="ff-icon-button mx-auto h-8 w-8 cursor-pointer list-none">⋮</summary>
+                                        <div
+                                            class="absolute right-0 z-20 mt-1 w-64 rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
+                                            <form method="POST" action="{{ route('family.members.update', $member) }}"
+                                                class="grid gap-3">
+                                                @csrf @method('PATCH')
+                                                <label class="form-label">Role
+                                                    <select name="role_id" class="form-control">
+                                                        @foreach ($roles as $role)
+                                                            <option value="{{ $role->id }}"
+                                                                @selected($member->role_id === $role->id)>{{ $role->role_name }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </label>
+                                                <label class="form-label">Status
+                                                    <select name="is_active" class="form-control">
+                                                        <option value="1" @selected($member->is_active)>Aktif</option>
+                                                        <option value="0" @selected(!$member->is_active)>Nonaktif
+                                                        </option>
+                                                    </select>
+                                                </label>
+                                                <button class="primary-action w-full">Simpan Perubahan</button>
+                                            </form>
+                                        </div>
+                                    </details>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="family-empty">Tidak ada anggota yang cocok.</td>
+                                <td colspan="8">
+                                    <div class="ff-empty">Tidak ada anggota yang cocok.</div>
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-            <div class="family-table-footer">
-                <span>Menampilkan 1 - {{ $members->count() }} dari {{ $allMembers->count() }} anggota</span>
-                <div class="family-pagination">
-                    <button type="button" disabled>&lsaquo;</button>
-                    <button type="button" class="is-active">1</button>
-                    <button type="button" disabled>&rsaquo;</button>
-                </div>
-            </div>
         </x-card>
+
+        <div x-show="addOpen" x-cloak>
+            <button type="button" class="fixed inset-0 z-40 bg-slate-950/40" @click="addOpen = false"
+                aria-label="Tutup panel"></button>
+            <aside class="ff-drawer p-5" x-transition>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="section-heading">Tambah Anggota</h2>
+                        <p class="ff-muted mt-1">Hubungkan akun baru ke {{ $family?->family_name }}.</p>
+                    </div><button type="button" class="ff-icon-button" @click="addOpen = false">×</button>
+                </div>
+                <form method="POST" action="{{ route('family.members.store') }}" class="mt-6 grid gap-4">
+                    @csrf
+                    <label class="form-label">Nama Lengkap<input name="name" value="{{ old('name') }}"
+                            class="form-control" required></label>
+                    <label class="form-label">Email<input name="email" type="email" value="{{ old('email') }}"
+                            class="form-control" required></label>
+                    <label class="form-label">Username<input name="username" value="{{ old('username') }}"
+                            class="form-control" placeholder="Opsional"></label>
+                    <label class="form-label">Nomor HP<input name="phone" value="{{ old('phone') }}"
+                            class="form-control" placeholder="Opsional"></label>
+                    <label class="form-label">Role<select name="role_id" class="form-control" required>
+                            @foreach ($roles as $role)
+                                <option value="{{ $role->id }}" @selected((int) old('role_id') === $role->id)>{{ $role->role_name }}
+                                </option>
+                            @endforeach
+                        </select></label>
+                    <label class="form-label">Password<input name="password" type="password" class="form-control"
+                            required></label>
+                    <button class="primary-action w-full">Simpan Anggota</button>
+                </form>
+            </aside>
+        </div>
     </div>
 @endsection

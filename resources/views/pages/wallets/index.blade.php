@@ -1,368 +1,288 @@
 @extends('layouts.app')
+
+@php
+    $formatCurrency = fn($value) => 'Rp ' . number_format((float) $value, 0, ',', '.');
+    $walletTypeLabels = ['cash' => 'Tunai', 'bank' => 'Bank', 'e-wallet' => 'E-Wallet'];
+    $walletTypeClasses = ['cash' => 'bg-emerald-500', 'bank' => 'bg-blue-600', 'e-wallet' => 'bg-violet-600'];
+    $months = collect(range(1, 12))->mapWithKeys(
+        fn($monthNumber) => [
+            $monthNumber => \Carbon\Carbon::create($period->year, $monthNumber, 1)->translatedFormat('F'),
+        ],
+    );
+    $years = range(now()->year - 2, now()->year + 2);
+@endphp
+
+@section('title', 'Dompet - FamFinance')
 @section('page_title', 'Dompet')
 @section('page_subtitle', 'Kelola semua dompet dan rekening keluarga Anda')
+
 @section('content')
-    @php
-        $formatCurrency = fn ($value) => 'Rp ' . number_format((float) $value, 0, ',', '.');
-        $walletTypeLabels = [
-            'cash' => 'Tunai',
-            'bank' => 'Bank',
-            'e-wallet' => 'E-Wallet',
-        ];
-        $walletPalette = [
-            'cash' => ['tone' => 'cash', 'icon' => 'Rp'],
-            'bank' => ['tone' => 'bank', 'icon' => 'BANK'],
-            'e-wallet' => ['tone' => 'ewallet', 'icon' => 'EW'],
-        ];
-        $walletPayload = $wallets
-            ->map(
-                fn ($wallet) => [
-                    'id' => $wallet->id,
-                    'wallet_name' => $wallet->wallet_name,
-                    'type' => $wallet->type,
-                    'balance' => (float) $wallet->balance,
-                    'account_number' => $wallet->account_number,
-                    'update_url' => route('wallets.update', $wallet),
-                    'destroy_url' => route('wallets.destroy', $wallet),
-                ],
-            )
-            ->values();
-    @endphp
-
-    <div class="wallet-page"
-        x-data="walletPage({
-            storeUrl: @js(route('wallets.store')),
-            wallets: @js($walletPayload),
-        })">
-        <section class="wallet-stat-grid">
-            <x-card class="wallet-stat-card">
-                <span class="wallet-stat-icon wallet-stat-total">
-                    <img src="{{ asset('assets/svg/icon-wallet.svg') }}" alt="">
-                </span>
-                <div>
-                    <span>Total Saldo</span>
-                    <strong>{{ $formatCurrency($totalBalance) }}</strong>
-                    <small class="text-emerald-600">Naik 8,5% dari bulan lalu</small>
-                </div>
-                <i>i</i>
-            </x-card>
-
-            <x-card class="wallet-stat-card">
-                <span class="wallet-stat-icon wallet-stat-count">
-                    <img src="{{ asset('assets/svg/icon-budget.svg') }}" alt="">
-                </span>
-                <div>
-                    <span>Jumlah Dompet</span>
-                    <strong>{{ $wallets->count() }}</strong>
-                    <small>{{ $bankCount }} bank &bull; {{ $ewalletCount }} e-wallet</small>
-                </div>
-                <i>i</i>
-            </x-card>
-
-            <x-card class="wallet-stat-card">
-                <span class="wallet-stat-icon wallet-stat-bank">
-                    <img src="{{ asset('assets/svg/icon-shield.svg') }}" alt="">
-                </span>
-                <div>
-                    <span>Saldo Bank</span>
-                    <strong>{{ $formatCurrency($bankBalance) }}</strong>
-                    <small>{{ $bankPercentage }}% dari total saldo</small>
-                </div>
-                <i>i</i>
-            </x-card>
-
-            <x-card class="wallet-stat-card">
-                <span class="wallet-stat-icon wallet-stat-ewallet">
-                    <img src="{{ asset('assets/svg/icon-wallet.svg') }}" alt="">
-                </span>
-                <div>
-                    <span>Saldo E-Wallet</span>
-                    <strong>{{ $formatCurrency($ewalletBalance) }}</strong>
-                    <small>{{ $ewalletPercentage }}% dari total saldo</small>
-                </div>
-                <i>i</i>
-            </x-card>
+    <div class="page-stack" x-data="{ addOpen: false }">
+        <h2 class="sr-only">Daftar Dompet</h2>
+        <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <x-stat-card label="Total Saldo" :value="$formatCurrency($totalBalance)" icon="icon-wallet.svg" tone="emerald" :hint="$wallets->count() . ' dompet aktif'" />
+            <x-stat-card label="Jumlah Dompet" :value="$wallets->count()" icon="icon-budget.svg" tone="purple" :hint="$bankCount . ' bank · ' . $ewalletCount . ' e-wallet'" />
+            <x-stat-card label="Saldo Bank" :value="$formatCurrency($bankBalance)" icon="icon-shield.svg" tone="blue" :hint="$bankPercentage . '% dari total saldo'" />
+            <x-stat-card label="Saldo E-Wallet" :value="$formatCurrency($ewalletBalance)" icon="icon-wallet.svg" tone="amber" :hint="$ewalletPercentage . '% dari total saldo'" />
         </section>
 
-        <x-card class="wallet-editor-card" x-show="showForm" x-cloak>
-            <div class="wallet-card-header">
-                <h2 x-text="mode === 'create' ? 'Tambah Dompet' : 'Edit Dompet'"></h2>
-                <button type="button" class="wallet-close-button" @click="showForm = false">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M6 6l12 12M18 6 6 18" />
-                    </svg>
-                </button>
-            </div>
-            <form method="POST" :action="formAction()" class="wallet-editor-form">
-                @csrf
-                <template x-if="mode === 'edit'">
-                    <input type="hidden" name="_method" value="PATCH">
-                </template>
-                <label>
-                    <span>Nama Dompet</span>
-                    <input name="wallet_name" x-model="form.wallet_name" required>
-                </label>
-                <label>
-                    <span>Tipe</span>
-                    <select name="type" x-model="form.type" required>
-                        <option value="cash">Cash</option>
-                        <option value="bank">Bank</option>
-                        <option value="e-wallet">E-Wallet</option>
-                    </select>
-                </label>
-                <label>
-                    <span>Saldo</span>
-                    <input name="balance" type="number" min="0" step="1000" x-model="form.balance" required>
-                </label>
-                <label>
-                    <span>Nomor Akun</span>
-                    <input name="account_number" x-model="form.account_number">
-                </label>
-                <button type="submit" class="wallet-primary-button">
-                    <span x-text="mode === 'create' ? 'Simpan Dompet' : 'Simpan Perubahan'"></span>
-                </button>
-            </form>
-        </x-card>
-
-        <section class="wallet-content-grid">
-            <x-card class="wallet-chart-card">
-                <div class="wallet-card-header">
-                    <h2>Arus Saldo (Semua Dompet)</h2>
-                    <span>{{ $period->translatedFormat('F Y') }}</span>
+        <section class="grid min-w-0 items-stretch gap-4 xl:grid-cols-12">
+            <x-card class="p-4 xl:col-span-5">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h2 class="text-sm font-extrabold">Arus Saldo (Semua Dompet)</h2>
+                        <div class="mt-2 flex gap-4 text-[10px] font-medium text-slate-500">
+                            <span class="flex items-center gap-2"><i
+                                    class="h-2 w-2 rounded-full bg-emerald-500"></i>Masuk</span>
+                            <span class="flex items-center gap-2"><i
+                                    class="h-2 w-2 rounded-full bg-rose-500"></i>Keluar</span>
+                        </div>
+                    </div>
+                    <form method="GET" action="{{ route('wallets.index') }}" class="grid grid-cols-[110px_84px] gap-2">
+                        <select name="month" class="form-control h-9 px-2 text-[10px]" onchange="this.form.submit()">
+                            @foreach ($months as $number => $name)
+                                <option value="{{ $number }}" @selected((int) $number === (int) $period->month)>{{ $name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <select name="year" class="form-control h-9 px-2 text-[10px]" onchange="this.form.submit()">
+                            @foreach ($years as $yearOption)
+                                <option value="{{ $yearOption }}" @selected((int) $yearOption === (int) $period->year)>{{ $yearOption }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </form>
                 </div>
-                <div class="wallet-chart-legend">
-                    <span><i class="bg-emerald-500"></i>Masuk</span>
-                    <span><i class="bg-rose-500"></i>Keluar</span>
-                </div>
-                <div class="wallet-chart-wrap">
-                    <canvas id="walletCashflowChart"></canvas>
-                </div>
+                <div class="mt-3 h-72"><canvas id="walletCashflowChart"></canvas></div>
             </x-card>
 
-            <x-card class="wallet-list-card">
-                <div class="wallet-card-header">
-                    <h2>Dompet Saya</h2>
-                    <button type="button" @click="startCreate()">Kelola</button>
+            <x-card class="p-4 xl:col-span-5">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-extrabold">Dompet Saya</h2><button type="button" @click="addOpen = true"
+                        class="text-[11px] font-bold text-emerald-600">Kelola</button>
                 </div>
-                <div class="wallet-card-grid">
-                    @forelse ($wallets as $wallet)
-                        @php
-                            $palette = $walletPalette[$wallet->type] ?? $walletPalette['cash'];
-                            $account = $wallet->account_number ?: ($wallet->type === 'cash' ? 'Tunai' : 'Tanpa nomor akun');
-                        @endphp
-                        <article class="wallet-item-card">
-                            <div class="wallet-item-head">
-                                <span class="wallet-brand wallet-brand-{{ $palette['tone'] }}">
-                                    {{ $wallet->type === 'bank' ? str($wallet->wallet_name)->substr(0, 3)->upper() : $palette['icon'] }}
-                                </span>
-                                <div>
-                                    <strong>{{ $wallet->wallet_name }}</strong>
-                                    <small>{{ $walletTypeLabels[$wallet->type] ?? ucfirst($wallet->type) }}</small>
+                <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                    @forelse($wallets as $wallet)
+                        <details class="group rounded-xl border border-slate-200 bg-white p-3.5 transition open:shadow-lg">
+                            <summary class="cursor-pointer list-none">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="flex min-w-0 items-center gap-3">
+                                        {{-- <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-xs font-extrabold text-white {{ $walletTypeClasses[$wallet->type] ?? 'bg-slate-500' }}">
+                                            {{ $wallet->type === 'bank' ? '▦' : ($wallet->type === 'e-wallet' ? '●' : '◉') }}
+                                        </span> --}}
+                                        <div class="min-w-0">
+                                            <b class="block truncate text-xs">{{ $wallet->wallet_name }}</b>
+                                            <span
+                                                class="mt-1 block text-[10px] text-slate-500">{{ $walletTypeLabels[$wallet->type] ?? $wallet->type }}</span>
+                                        </div>
+                                    </div>
+                                    <span class="text-slate-400">›</span>
                                 </div>
-                                <button type="button" @click="editWallet({{ $wallet->id }})">&rsaquo;</button>
+                                <strong
+                                    class="mt-3 block text-base font-extrabold">{{ $formatCurrency($wallet->balance) }}</strong>
+                                <span
+                                    class="mt-1 block truncate text-[10px] text-slate-500">{{ $wallet->account_number ?: $wallet->transactions_count . ' transaksi' }}</span>
+                            </summary>
+                            <div class="mt-4 border-t border-slate-100 pt-3">
+                                <form method="POST" action="{{ route('wallets.update', $wallet) }}" class="grid gap-2">
+                                    @csrf @method('PUT')
+                                    <input name="wallet_name" value="{{ $wallet->wallet_name }}" class="form-control"
+                                        required>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <select name="type" class="form-control">
+                                            <option value="cash" @selected($wallet->type === 'cash')>Cash</option>
+                                            <option value="bank" @selected($wallet->type === 'bank')>Bank</option>
+                                            <option value="e-wallet" @selected($wallet->type === 'e-wallet')>E-Wallet</option>
+                                        </select>
+                                        <input name="balance" type="number" min="0"
+                                            value="{{ (int) $wallet->balance }}" class="form-control" required>
+                                    </div>
+                                    <input name="account_number" value="{{ $wallet->account_number }}" class="form-control"
+                                        placeholder="Nomor akun">
+                                    <button class="primary-action w-full">Simpan</button>
+                                </form>
+                                <form method="POST" action="{{ route('wallets.destroy', $wallet) }}" class="mt-2"
+                                    onsubmit="return confirm('Hapus dompet ini?')">
+                                    @csrf @method('DELETE')
+                                    <button class="danger-action w-full">Hapus</button>
+                                </form>
                             </div>
-                            <div class="wallet-item-balance">{{ $formatCurrency($wallet->balance) }}</div>
-                            <div class="wallet-item-account">{{ $account }}</div>
-                        </article>
+                        </details>
                     @empty
-                        <p class="wallet-empty">Belum ada dompet.</p>
+                        <div class="ff-empty sm:col-span-2">Belum ada dompet.</div>
                     @endforelse
                 </div>
             </x-card>
 
-            <div class="wallet-side-stack">
-                <x-card class="wallet-quick-card">
-                    <h2>Aksi Cepat</h2>
-                    <button type="button" class="wallet-quick-action wallet-quick-primary" @click="startCreate()">
-                        <span>+</span>
-                        <strong>Tambah Dompet</strong>
-                        <small>Tambah rekening bank atau e-wallet baru</small>
+            <div class="grid content-start gap-3 xl:col-span-2">
+                <x-card class="p-4">
+                    <h2 class="text-sm font-extrabold">Aksi Cepat</h2>
+                    <button type="button" @click="addOpen = true"
+                        class="mt-3 flex w-full items-center gap-3 rounded-xl bg-emerald-600 p-3 text-left text-white">
+                        <span class="text-xl">＋</span><span><b class="block text-xs">Tambah Dompet</b><span
+                                class="mt-1 block text-[9px] opacity-80">Bank atau e-wallet baru</span></span>
                     </button>
-                    <button type="button" class="wallet-quick-action wallet-quick-blue">
-                        <span>&harr;</span>
-                        <strong>Transfer Antar Dompet</strong>
-                        <small>Pindahkan saldo antar dompet Anda</small>
-                    </button>
-                    <button type="button" class="wallet-quick-action wallet-quick-purple">
-                        <span>&#9776;</span>
-                        <strong>Rekonsiliasi</strong>
-                        <small>Cocokkan transaksi dengan mutasi akun</small>
-                    </button>
+                    <a href="{{ route('transactions.create') }}"
+                        class="mt-2 flex items-center gap-3 rounded-xl border border-blue-100 bg-blue-50 p-3 text-blue-700">
+                        <span class="text-lg">⇄</span><span><b class="block text-xs">Catat Transaksi</b><span
+                                class="mt-1 block text-[9px] text-slate-500">Perbarui saldo dompet</span></span>
+                    </a>
+                    <a href="{{ route('reports.history') }}"
+                        class="mt-2 flex items-center gap-3 rounded-xl border border-violet-100 bg-violet-50 p-3 text-violet-700">
+                        <span class="text-lg">▤</span><span><b class="block text-xs">Rekonsiliasi</b><span
+                                class="mt-1 block text-[9px] text-slate-500">Periksa riwayat mutasi</span></span>
+                    </a>
                 </x-card>
-
-                <x-card class="wallet-tip-card">
-                    <span>
-                        <img src="{{ asset('assets/svg/icon-income.svg') }}" alt="">
-                    </span>
-                    <div>
-                        <h2>Tips Keuangan</h2>
-                        <p>Lakukan rekonsiliasi secara rutin agar catatan keuangan selalu akurat dan up to date.</p>
-                    </div>
-                </x-card>
+                <div
+                    class="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 text-[10px] font-medium leading-5 text-slate-500">
+                    <b class="block text-xs text-slate-800">💡 Tips Keuangan</b>
+                    <p class="mt-2">Lakukan rekonsiliasi secara rutin agar catatan keuangan selalu akurat.</p>
+                </div>
             </div>
         </section>
 
-        <x-card class="wallet-activity-card">
-            <div class="wallet-card-header">
-                <h2>Aktivitas Dompet Terbaru</h2>
-                <a href="{{ route('reports.history') }}">Lihat semua</a>
+        <x-card class="overflow-hidden">
+            <div class="ff-card-header">
+                <div>
+                    <h2 class="section-heading">Aktivitas Dompet Terbaru</h2>
+                    <p class="ff-muted mt-1">Lima transaksi terbaru dari seluruh dompet.</p>
+                </div><a href="{{ route('transactions.index') }}" class="text-[11px] font-bold text-emerald-600">Lihat
+                    semua</a>
             </div>
-            <div class="wallet-table-wrap">
-                <table class="wallet-table">
+            <div class="ff-table-wrap">
+                <table class="ff-table min-w-[760px]">
                     <thead>
                         <tr>
                             <th>Tanggal</th>
                             <th>Dompet</th>
                             <th>Tipe</th>
                             <th>Deskripsi</th>
-                            <th>Masuk</th>
-                            <th>Keluar</th>
-                            <th>Saldo Setelahnya</th>
+                            <th class="text-right">Masuk</th>
+                            <th class="text-right">Keluar</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse ($recentActivities as $activity)
+                        @forelse($recentActivities as $activity)
                             <tr>
-                                <td data-label="Tanggal">
-                                    {{ $activity->transaction_date->translatedFormat('d M Y') }}
-                                    <span>{{ $activity->created_at?->format('H:i') }}</span>
+                                <td class="whitespace-nowrap">
+                                    {{ $activity->transaction_date?->translatedFormat('d M Y') }} <span
+                                        class="ml-2 text-[9px] text-slate-400">{{ $activity->created_at?->format('H:i') }}</span>
                                 </td>
-                                <td data-label="Dompet">
-                                    <span class="wallet-mini-brand">{{ str($activity->wallet?->wallet_name ?? '-')->substr(0, 3)->upper() }}</span>
-                                    {{ $activity->wallet?->wallet_name ?? '-' }}
-                                </td>
-                                <td data-label="Tipe">{{ $activity->type === 'income' ? 'Transfer Masuk' : 'Pengeluaran' }}</td>
-                                <td data-label="Deskripsi">{{ $activity->title }}</td>
-                                <td data-label="Masuk" class="wallet-money-in">
-                                    {{ $activity->type === 'income' ? $formatCurrency($activity->amount) : '-' }}
-                                </td>
-                                <td data-label="Keluar" class="wallet-money-out">
-                                    {{ $activity->type === 'expense' ? $formatCurrency($activity->amount) : '-' }}
-                                </td>
-                                <td data-label="Saldo Setelahnya">{{ $formatCurrency($activity->wallet?->balance ?? 0) }}</td>
+                                <td class="font-bold">{{ $activity->wallet?->wallet_name ?? '-' }}</td>
+                                <td>{{ $activity->type === 'income' ? 'Pemasukan' : 'Pengeluaran' }}</td>
+                                <td>{{ $activity->title }} <span class="text-slate-400">—
+                                        {{ $activity->user?->name }}</span></td>
+                                <td class="text-right font-bold text-emerald-600">
+                                    {{ $activity->type === 'income' ? $formatCurrency($activity->amount) : '-' }}</td>
+                                <td class="text-right font-bold text-rose-600">
+                                    {{ $activity->type === 'expense' ? $formatCurrency($activity->amount) : '-' }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="wallet-empty">Belum ada aktivitas dompet.</td>
+                                <td colspan="6">
+                                    <div class="ff-empty">Belum ada aktivitas dompet.</div>
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-            <a href="{{ route('reports.history') }}" class="wallet-card-link">Lihat semua aktivitas &rarr;</a>
         </x-card>
+
+        <div x-show="addOpen" x-cloak>
+            <button type="button" class="fixed inset-0 z-40 bg-slate-950/40" @click="addOpen = false"
+                aria-label="Tutup panel"></button>
+            <aside class="ff-drawer p-5" x-transition>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="section-heading">Tambah Dompet</h2>
+                        <p class="ff-muted mt-1">Tambahkan sumber dana keluarga.</p>
+                    </div><button type="button" class="ff-icon-button" @click="addOpen = false">×</button>
+                </div>
+                <form method="POST" action="{{ route('wallets.store') }}" class="mt-6 grid gap-4">
+                    @csrf
+                    <label class="form-label">Nama Dompet<input name="wallet_name" value="{{ old('wallet_name') }}"
+                            class="form-control" placeholder="Cash, BCA, GoPay" required></label>
+                    <label class="form-label">Tipe<select name="type" class="form-control">
+                            <option value="cash">Cash</option>
+                            <option value="bank">Bank</option>
+                            <option value="e-wallet">E-Wallet</option>
+                        </select></label>
+                    <label class="form-label">Saldo Awal<input name="balance" type="number" min="0"
+                            value="{{ old('balance', 0) }}" class="form-control" required></label>
+                    <label class="form-label">Nomor Akun<input name="account_number" value="{{ old('account_number') }}"
+                            class="form-control" placeholder="Opsional"></label>
+                    <button class="primary-action w-full">Simpan Dompet</button>
+                </form>
+            </aside>
+        </div>
     </div>
 @endsection
 
 @push('scripts')
     <script>
-        window.walletPage = (config) => ({
-            showForm: false,
-            mode: 'create',
-            storeUrl: config.storeUrl,
-            wallets: config.wallets || [],
-            form: {
-                wallet_name: '',
-                type: 'cash',
-                balance: 0,
-                account_number: '',
-            },
-
-            startCreate() {
-                this.mode = 'create';
-                this.showForm = true;
-                this.form = {
-                    wallet_name: '',
-                    type: 'cash',
-                    balance: 0,
-                    account_number: '',
-                };
-            },
-
-            editWallet(id) {
-                const wallet = this.wallets.find((item) => item.id === id);
-
-                if (!wallet) {
-                    this.startCreate();
-                    return;
-                }
-
-                this.mode = 'edit';
-                this.showForm = true;
-                this.form = {
-                    id: wallet.id,
-                    wallet_name: wallet.wallet_name,
-                    type: wallet.type,
-                    balance: wallet.balance,
-                    account_number: wallet.account_number || '',
-                    update_url: wallet.update_url,
-                };
-            },
-
-            formAction() {
-                return this.mode === 'edit' ? this.form.update_url : this.storeUrl;
-            },
-        });
-
         document.addEventListener('DOMContentLoaded', () => {
-            const chartEl = document.getElementById('walletCashflowChart');
-
-            if (!chartEl || !window.Chart) {
-                return;
-            }
-
-            const cashflow = @js($cashflow);
-            const month = @js($period->translatedFormat('M'));
-
-            new window.Chart(chartEl, {
+            const el = document.getElementById('walletCashflowChart');
+            if (!el || !window.Chart) return;
+            new window.Chart(el, {
                 type: 'line',
                 data: {
-                    labels: cashflow.labels.map((day) => `${day} ${month}`),
-                    datasets: [
-                        {
+                    labels: @json($cashflow['labels']),
+                    datasets: [{
                             label: 'Masuk',
-                            data: cashflow.income,
-                            borderColor: '#10B981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.14)',
+                            data: @json($cashflow['income']),
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16,185,129,.10)',
                             fill: true,
-                            tension: 0.38,
+                            tension: .35,
                             pointRadius: 0,
-                            pointHoverRadius: 4,
-                            borderWidth: 3,
+                            borderWidth: 2
                         },
                         {
                             label: 'Keluar',
-                            data: cashflow.expense,
-                            borderColor: '#EF4444',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            data: @json($cashflow['expense']),
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239,68,68,.08)',
                             fill: true,
-                            tension: 0.38,
+                            tension: .35,
                             pointRadius: 0,
-                            pointHoverRadius: 4,
-                            borderWidth: 3,
+                            borderWidth: 2
                         },
                     ],
                 },
                 options: {
                     maintainAspectRatio: false,
-                    responsive: true,
                     plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: (context) => `${context.dataset.label}: Rp ${Number(context.raw).toLocaleString('id-ID')}`,
-                            },
-                        },
+                        legend: {
+                            display: false
+                        }
                     },
                     scales: {
-                        x: { grid: { display: false }, ticks: { maxTicksLimit: 7 } },
                         y: {
-                            grid: { color: '#E2E8F0', borderDash: [5, 5] },
+                            beginAtZero: true,
                             ticks: {
-                                callback: (value) => value >= 1000000 ? `${value / 1000000}jt` : value,
+                                callback: v => Number(v / 1000000).toLocaleString('id-ID') + 'jt',
+                                font: {
+                                    size: 9
+                                }
                             },
+                            grid: {
+                                color: '#e2e8f0',
+                                borderDash: [4, 4]
+                            }
                         },
-                    },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                maxTicksLimit: 7,
+                                font: {
+                                    size: 9
+                                }
+                            }
+                        }
+                    }
                 },
             });
         });

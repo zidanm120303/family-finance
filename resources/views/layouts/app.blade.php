@@ -11,7 +11,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body
-    class="bg-slate-50 text-slate-950 antialiased"
+    class="overflow-x-hidden bg-slate-50 font-[Inter] text-slate-950 antialiased"
     x-data="{
         mobileMenuOpen: false,
         openMobileMenu() { this.mobileMenuOpen = true },
@@ -21,18 +21,18 @@
     @keydown.escape.window="closeMobileMenu()"
     @resize.window="if (window.innerWidth >= 1024) closeMobileMenu()"
 >
-<div class="app-shell min-h-screen flex">
+<div class="flex min-h-screen">
     @include('partials.sidebar')
-    <main class="flex-1 min-w-0 overflow-x-hidden">
+    <main class="min-w-0 flex-1 overflow-x-clip">
         @include('partials.header')
-        <section class="app-content p-4 pb-24 sm:p-5 sm:pb-24 lg:p-6">
+        <section class="mx-auto w-full max-w-[1680px] p-4 pb-24 sm:p-5 lg:px-4 lg:py-5 xl:px-5 2xl:px-6">
             @if(session('success'))
-                <div class="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-bold text-emerald-700">
+                <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
                     {{ session('success') }}
                 </div>
             @endif
             @if($errors->any())
-                <div class="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700">
+                <div class="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
                     {{ $errors->first() }}
                 </div>
             @endif

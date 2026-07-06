@@ -16,16 +16,16 @@
     ][$tone] ?? 'bg-slate-50 text-slate-700';
 @endphp
 
-<x-card class="p-5">
-    <div class="flex items-center gap-4">
-        <div class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl {{ $toneClass }}">
-            <img src="{{ asset('assets/svg/'.$icon) }}" class="h-8 w-8" alt="">
+<x-card class="h-full p-4">
+    <div class="flex min-w-0 items-center gap-3">
+        <div class="grid h-11 w-11 shrink-0 place-items-center rounded-xl {{ $toneClass }}">
+            <img src="{{ asset('assets/svg/'.$icon) }}" class="h-6 w-6" alt="">
         </div>
         <div class="min-w-0">
-            <div class="text-sm font-semibold text-slate-500">{{ $label }}</div>
-            <div class="mt-1 break-words text-xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-2xl">{{ $value }}</div>
+            <div class="text-xs font-semibold text-slate-500">{{ $label }}</div>
+            <div class="mt-1 break-words text-lg font-extrabold leading-tight tracking-tight text-slate-950 xl:text-xl">{{ $value }}</div>
             @if($hint)
-                <div class="mt-1 text-xs font-semibold text-slate-500">{{ $hint }}</div>
+                <div class="mt-1 truncate text-[11px] font-medium text-slate-500">{{ $hint }}</div>
             @endif
         </div>
     </div>

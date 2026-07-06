@@ -7,6 +7,7 @@ use App\Models\Wallet;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class WalletController extends Controller
@@ -20,12 +21,13 @@ class WalletController extends Controller
             ->orderByRaw("CASE type WHEN 'cash' THEN 1 WHEN 'bank' THEN 2 ELSE 3 END")
             ->orderBy('wallet_name')
             ->get();
-        $cashflowRows = Transaction::selectRaw('DAY(transaction_date) as day, type, SUM(amount) as total')
+        $dayExpression = $this->dayExpression();
+        $cashflowRows = Transaction::selectRaw("{$dayExpression} as day, type, SUM(amount) as total")
             ->where('family_id', $familyId)
             ->where('status', 'success')
             ->whereMonth('transaction_date', $period->month)
             ->whereYear('transaction_date', $period->year)
-            ->groupBy('day', 'type')
+            ->groupByRaw("{$dayExpression}, type")
             ->get();
         $recentActivities = Transaction::with(['wallet', 'category', 'user'])
             ->where('family_id', $familyId)
@@ -123,5 +125,14 @@ class WalletController extends Controller
             'income' => $income,
             'expense' => $expense,
         ];
+    }
+
+    private function dayExpression(): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => "CAST(strftime('%d', transaction_date) AS INTEGER)",
+            'pgsql' => 'EXTRACT(DAY FROM transaction_date)',
+            default => 'DAY(transaction_date)',
+        };
     }
 }

@@ -8,6 +8,7 @@ use App\Models\TransactionHistory;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class ReportController extends Controller
@@ -27,11 +28,12 @@ class ReportController extends Controller
             ->where('status', 'success')
             ->get();
 
-        $monthlyCashflow = Transaction::selectRaw('YEAR(transaction_date) as year, MONTH(transaction_date) as month, type, SUM(amount) as total')
+        [$yearExpression, $monthExpression] = $this->periodExpressions();
+        $monthlyCashflow = Transaction::selectRaw("{$yearExpression} as year, {$monthExpression} as month, type, SUM(amount) as total")
             ->where('family_id', $familyId)
             ->where('status', 'success')
             ->whereYear('transaction_date', $to->year)
-            ->groupBy('year', 'month', 'type')
+            ->groupByRaw("{$yearExpression}, {$monthExpression}, type")
             ->get();
 
         $expenseByCategory = $transactions
@@ -104,5 +106,23 @@ class ReportController extends Controller
     public function exportExcel(): RedirectResponse
     {
         return back()->with('success', 'Export Excel disiapkan sebagai placeholder phase lanjutan.');
+    }
+
+    private function periodExpressions(): array
+    {
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => [
+                "CAST(strftime('%Y', transaction_date) AS INTEGER)",
+                "CAST(strftime('%m', transaction_date) AS INTEGER)",
+            ],
+            'pgsql' => [
+                'EXTRACT(YEAR FROM transaction_date)',
+                'EXTRACT(MONTH FROM transaction_date)',
+            ],
+            default => [
+                'YEAR(transaction_date)',
+                'MONTH(transaction_date)',
+            ],
+        };
     }
 }

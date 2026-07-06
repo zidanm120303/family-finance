@@ -1,131 +1,201 @@
 @extends('layouts.app')
+
 @php
     $isEdit = isset($transaction);
     $pageTitle = $isEdit ? 'Edit Transaksi' : 'Tambah Transaksi';
+    $formatCurrency = fn ($value) => 'Rp '.number_format((float) $value, 0, ',', '.');
+    $fieldClass = 'form-control mt-2';
+    $labelClass = 'block min-w-0 text-xs font-bold text-slate-700';
+    $transactionDate = old('transaction_date', $isEdit ? \Illuminate\Support\Carbon::parse($transaction->transaction_date)->toDateString() : now()->toDateString());
+    $initialType = old('type', $transaction->type ?? 'income');
+    $initialMethod = old('payment_method', $transaction->payment_method ?? 'cash');
+    $initialStatus = old('status', $transaction->status ?? 'success');
+    $initialAmount = old('amount', $isEdit ? (int) $transaction->amount : 0);
 @endphp
-@section('title',$pageTitle.' - FamFinance')
-@section('page_title',$pageTitle)
-@section('page_subtitle','Kelola pemasukan dan pengeluaran keluarga')
+
+@section('title', $pageTitle.' - FamFinance')
+@section('page_title', $pageTitle)
+@section('page_subtitle', 'Transaksi › '.$pageTitle)
+
 @section('content')
-<form method="POST" action="{{ $isEdit ? route('transactions.update', $transaction) : route('transactions.store') }}" enctype="multipart/form-data" class="grid grid-cols-1 gap-6 xl:grid-cols-12">
-    @csrf
-    @if($isEdit)
-        @method('PUT')
-    @endif
+    <form method="POST" action="{{ $isEdit ? route('transactions.update', $transaction) : route('transactions.store') }}"
+        enctype="multipart/form-data"
+        class="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_292px]"
+        x-data="{
+            type: @js($initialType),
+            method: @js($initialMethod),
+            status: @js($initialStatus),
+            amount: Number(@js($initialAmount)) || 0,
+            wallet: @js(old('wallet_id', $transaction->wallet_id ?? '')),
+            fileName: '',
+            formatAmount() { return new Intl.NumberFormat('id-ID').format(this.amount || 0) }
+        }">
+        @csrf
+        @if($isEdit) @method('PUT') @endif
 
-    <x-card class="p-6 xl:col-span-8">
-        <div class="mb-6 flex items-start justify-between gap-4">
-            <div>
-                <h2 class="font-extrabold text-lg">Informasi Transaksi</h2>
-                <p class="mt-1 text-sm text-slate-500">Status sukses akan langsung memengaruhi saldo dompet.</p>
+        <x-card class="p-4 sm:p-5">
+            <div class="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
+                <span class="grid h-8 w-8 place-items-center rounded-lg bg-emerald-50">
+                    <img src="{{ asset('assets/svg/icon-wallet.svg') }}" class="h-5 w-5" alt="">
+                </span>
+                <div class="min-w-0">
+                    <h2 class="text-sm font-extrabold">Informasi Transaksi</h2>
+                    <p class="mt-1 text-[10px] font-medium text-slate-500">Status sukses akan memengaruhi saldo dompet.</p>
+                </div>
             </div>
-            <x-badge tone="{{ $isEdit ? 'blue' : 'success' }}">{{ $transactionCode ?? 'Baru' }}</x-badge>
-        </div>
 
-        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <label class="text-sm font-extrabold text-slate-700">
-                Kode Transaksi
-                <input disabled value="{{ $transactionCode }}" class="form-field mt-2 bg-slate-50">
-            </label>
-            <label class="text-sm font-extrabold text-slate-700">
-                Judul Transaksi
-                <input name="title" value="{{ old('title', $transaction->title ?? '') }}" class="form-field mt-2" placeholder="Contoh: Gaji Bulanan">
-            </label>
-            <label class="text-sm font-extrabold text-slate-700">
-                Tipe
-                <select name="type" class="form-field mt-2">
-                    <option value="income" @selected(old('type', $transaction->type ?? '') === 'income')>Pemasukan</option>
-                    <option value="expense" @selected(old('type', $transaction->type ?? 'expense') === 'expense')>Pengeluaran</option>
-                </select>
-            </label>
-            <label class="text-sm font-extrabold text-slate-700">
-                Kategori
-                <select name="category_id" class="form-field mt-2">
-                    @foreach($categories as $category)
-                        <option value="{{ $category->id }}" @selected((int) old('category_id', $transaction->category_id ?? 0) === $category->id)>{{ ucfirst($category->type) }} - {{ $category->category_name }}</option>
-                    @endforeach
-                </select>
-            </label>
-            <label class="text-sm font-extrabold text-slate-700">
-                Nominal
-                <input name="amount" type="number" min="1" value="{{ old('amount', isset($transaction) ? (int) $transaction->amount : '') }}" class="form-field mt-2" placeholder="150000">
-            </label>
-            <label class="text-sm font-extrabold text-slate-700">
-                Tanggal
-                <input name="transaction_date" type="date" value="{{ old('transaction_date', isset($transaction) ? $transaction->transaction_date->toDateString() : now()->toDateString()) }}" class="form-field mt-2">
-            </label>
-            <label class="text-sm font-extrabold text-slate-700">
-                Metode
-                <select name="payment_method" class="form-field mt-2">
-                    <option value="cash" @selected(old('payment_method', $transaction->payment_method ?? '') === 'cash')>Cash</option>
-                    <option value="e-wallet" @selected(old('payment_method', $transaction->payment_method ?? '') === 'e-wallet')>E-Wallet</option>
-                    <option value="bank" @selected(old('payment_method', $transaction->payment_method ?? '') === 'bank')>Bank</option>
-                </select>
-            </label>
-            <label class="text-sm font-extrabold text-slate-700">
-                Dompet
-                <select name="wallet_id" class="form-field mt-2">
-                    <option value="">Tanpa dompet</option>
-                    @foreach($wallets as $wallet)
-                        <option value="{{ $wallet->id }}" @selected((int) old('wallet_id', $transaction->wallet_id ?? 0) === $wallet->id)>{{ $wallet->wallet_name }} - Rp {{ number_format($wallet->balance,0,',','.') }}</option>
-                    @endforeach
-                </select>
-            </label>
-            <label class="text-sm font-extrabold text-slate-700">
-                Status
-                <select name="status" class="form-field mt-2">
-                    <option value="pending" @selected(old('status', $transaction->status ?? '') === 'pending')>Pending</option>
-                    <option value="success" @selected(old('status', $transaction->status ?? 'success') === 'success')>Sukses</option>
-                    <option value="cancel" @selected(old('status', $transaction->status ?? '') === 'cancel')>Batal</option>
-                </select>
-            </label>
-            <label class="md:col-span-2 text-sm font-extrabold text-slate-700">
-                Deskripsi
-                <textarea name="description" class="form-field mt-2" rows="4">{{ old('description', $transaction->description ?? '') }}</textarea>
-            </label>
-            <div class="md:col-span-2 text-sm font-extrabold text-slate-700" x-data="{ fileName: '' }">
-                <span>Upload Lampiran</span>
-                <label class="ff-upload-box mt-2">
-                    <span class="ff-upload-icon" aria-hidden="true">
-                        <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 16V5m0 0 4 4m-4-4-4 4" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M5 15v2.5A2.5 2.5 0 0 0 7.5 20h9a2.5 2.5 0 0 0 2.5-2.5V15" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/>
-                        </svg>
-                    </span>
-                    <span class="text-sm font-extrabold text-slate-800">Pilih file bukti transaksi</span>
-                    <span class="text-xs font-semibold text-slate-500" x-text="fileName || 'JPG, PNG, atau PDF maksimal 5MB'"></span>
-                    <input name="attachment" type="file" accept=".jpg,.jpeg,.png,.pdf" class="sr-only" @change="fileName = $event.target.files[0]?.name || ''">
+            <div class="grid min-w-0 gap-x-5 gap-y-4 md:grid-cols-2">
+                <label class="{{ $labelClass }}">Kode Transaksi
+                    <input disabled value="{{ $transactionCode }}" class="{{ $fieldClass }} bg-slate-50 text-slate-500">
+                    <span class="mt-1.5 block text-[9px] font-medium text-slate-400">Otomatis terisi</span>
                 </label>
-                @if($isEdit && ! empty($transaction->attachment))
-                    <a href="{{ asset('storage/'.$transaction->attachment) }}" target="_blank" class="mt-2 inline-flex text-xs font-extrabold text-emerald-700">Lampiran saat ini</a>
-                @endif
+                <label class="{{ $labelClass }}">Judul Transaksi <span class="text-rose-500">*</span>
+                    <input name="title" maxlength="120" value="{{ old('title', $transaction->title ?? '') }}" class="{{ $fieldClass }}" placeholder="Contoh: Gaji Bulanan, Belanja Mingguan" required>
+                </label>
+
+                <fieldset class="min-w-0">
+                    <legend class="text-xs font-bold text-slate-700">Tipe Transaksi <span class="text-rose-500">*</span></legend>
+                    <div class="mt-2 grid grid-cols-2 gap-2">
+                        @foreach([['income','Pemasukan','↑'],['expense','Pengeluaran','↓']] as [$value,$label,$symbol])
+                            <label class="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border text-xs font-bold transition"
+                                :class="type === '{{ $value }}' ? '{{ $value === 'income' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-rose-500 bg-rose-50 text-rose-700' }}' : 'border-slate-200 bg-white text-slate-600'">
+                                <input name="type" value="{{ $value }}" type="radio" class="sr-only" x-model="type">
+                                <span class="text-xl leading-none">{{ $symbol }}</span>{{ $label }}
+                            </label>
+                        @endforeach
+                    </div>
+                </fieldset>
+
+                <label class="{{ $labelClass }}">Kategori <span class="text-rose-500">*</span>
+                    <select name="category_id" class="{{ $fieldClass }}" required>
+                        <option value="">Pilih kategori</option>
+                        @foreach($categories as $category)
+                            <option value="{{ $category->id }}" @selected((int) old('category_id', $transaction->category_id ?? 0) === $category->id)>
+                                {{ $category->type === 'income' ? 'Pemasukan' : 'Pengeluaran' }} — {{ $category->category_name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </label>
+
+                <label class="{{ $labelClass }}">Nominal <span class="text-rose-500">*</span>
+                    <span class="mt-2 flex h-11 items-center rounded-xl border border-slate-200 bg-white focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-100">
+                        <span class="flex h-full items-center border-r border-slate-200 px-3 text-xs font-bold text-slate-500">Rp</span>
+                        <input name="amount" type="number" min="1" x-model.number="amount" class="min-w-0 flex-1 border-0 bg-transparent px-3 text-[13px] font-semibold outline-none" placeholder="Masukkan nominal" required>
+                    </span>
+                    <span class="mt-1.5 block text-[9px] font-medium text-slate-400">Masukkan angka tanpa titik dan koma</span>
+                </label>
+
+                <label class="{{ $labelClass }}">Tanggal Transaksi <span class="text-rose-500">*</span>
+                    <input name="transaction_date" type="date" value="{{ $transactionDate }}" class="{{ $fieldClass }}" required>
+                </label>
+
+                <fieldset class="min-w-0">
+                    <legend class="text-xs font-bold text-slate-700">Metode Pembayaran <span class="text-rose-500">*</span></legend>
+                    <div class="mt-2 grid grid-cols-3 gap-2">
+                        @foreach([['cash','Cash'],['e-wallet','E-Wallet'],['bank','Bank']] as [$value,$label])
+                            <label class="flex h-11 cursor-pointer items-center justify-center rounded-xl border px-2 text-[11px] font-bold transition"
+                                :class="method === '{{ $value }}' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-600'">
+                                <input name="payment_method" value="{{ $value }}" type="radio" class="sr-only" x-model="method">{{ $label }}
+                            </label>
+                        @endforeach
+                    </div>
+                </fieldset>
+
+                <label class="{{ $labelClass }}">Dompet / Rekening
+                    <select name="wallet_id" class="{{ $fieldClass }}" x-model="wallet">
+                        <option value="">Tanpa dompet</option>
+                        @foreach($wallets as $wallet)
+                            <option value="{{ $wallet->id }}">{{ $wallet->wallet_name }} — {{ $formatCurrency($wallet->balance) }}</option>
+                        @endforeach
+                    </select>
+                </label>
+
+                <fieldset class="min-w-0">
+                    <legend class="text-xs font-bold text-slate-700">Status <span class="text-rose-500">*</span></legend>
+                    <div class="mt-2 grid grid-cols-2 gap-2">
+                        @foreach([['success','Sukses'],['cancel','Batal']] as [$value,$label])
+                            <label class="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border text-xs font-bold transition"
+                                :class="status === '{{ $value }}' ? '{{ $value === 'success' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-rose-500 bg-rose-50 text-rose-700' }}' : 'border-slate-200 bg-white text-slate-600'">
+                                <input name="status" value="{{ $value }}" type="radio" class="sr-only" x-model="status">
+                                <span>{{ $value === 'success' ? '✓' : '×' }}</span>{{ $label }}
+                            </label>
+                        @endforeach
+                    </div>
+                </fieldset>
+
+                <label class="{{ $labelClass }} md:col-span-2">Deskripsi / Catatan
+                    <textarea name="description" rows="3" maxlength="500" class="form-control mt-2 h-20 py-3" placeholder="Tulis deskripsi atau catatan tambahan (opsional)">{{ old('description', $transaction->description ?? '') }}</textarea>
+                </label>
+
+                <div class="{{ $labelClass }} md:col-span-2">
+                    Upload Lampiran / Bukti Transfer <span class="font-medium text-slate-400">(opsional)</span>
+                    <div class="mt-2 grid min-w-0 gap-3" :class="fileName || @js($isEdit && !empty($transaction->attachment)) ? 'lg:grid-cols-[minmax(0,1fr)_270px]' : 'grid-cols-1'">
+                        <label class="flex min-h-28 cursor-pointer items-center justify-center gap-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center transition hover:border-emerald-500 hover:bg-emerald-50">
+                            <span class="text-3xl text-emerald-600">☁</span>
+                            <span class="text-left">
+                                <b class="block text-[11px] text-slate-700">Seret &amp; lepas file di sini</b>
+                                <span class="mt-1 block text-[10px] font-semibold text-emerald-600">atau klik untuk memilih file</span>
+                                <span class="mt-1 block text-[9px] font-medium text-slate-400">Maks. 5MB. Format: JPG, PNG, PDF</span>
+                            </span>
+                            <input name="attachment" type="file" accept=".jpg,.jpeg,.png,.pdf" class="sr-only" @change="fileName = $event.target.files[0]?.name || ''">
+                        </label>
+                        <div class="flex min-h-28 items-center gap-3 rounded-xl border border-slate-200 p-3" x-show="fileName || @js($isEdit && !empty($transaction->attachment))">
+                            <span class="grid h-16 w-16 shrink-0 place-items-center rounded-lg bg-emerald-50 text-2xl">📎</span>
+                            <div class="min-w-0">
+                                <b class="block truncate text-[11px]" x-text="fileName || @js($isEdit ? basename($transaction->attachment ?? '') : '')"></b>
+                                @if($isEdit && !empty($transaction->attachment))
+                                    <a href="{{ asset('storage/'.$transaction->attachment) }}" target="_blank" class="mt-2 block text-[10px] font-bold text-emerald-600">Lihat lampiran saat ini</a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
 
-        <div class="mt-6 flex flex-wrap justify-end gap-3">
-            <a href="{{ route('transactions.index') }}" class="px-5 py-3 text-sm font-extrabold text-slate-600">Batal</a>
-            <x-button type="submit">{{ $isEdit ? 'Simpan Perubahan' : 'Simpan Transaksi' }}</x-button>
-        </div>
-    </x-card>
-
-    <div class="space-y-6 xl:col-span-4">
-        <x-card class="p-6">
-            <h2 class="font-extrabold text-lg">Ringkasan Dampak</h2>
-            <p class="mt-3 text-sm leading-6 text-slate-500">Pemasukan sukses menambah saldo dompet. Pengeluaran sukses mengurangi saldo dompet. Status pending atau batal tidak mengubah saldo.</p>
-            <img src="{{ asset('assets/illustration/budget-report-illustration.png') }}" class="mt-6 h-52 w-full object-contain" alt="Ilustrasi transaksi">
+            <div class="mt-5 flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end">
+                <a href="{{ route('transactions.index') }}" class="secondary-action">Batal</a>
+                <button class="primary-action">✓ {{ $isEdit ? 'Simpan Perubahan' : 'Simpan Transaksi' }}</button>
+            </div>
         </x-card>
 
-        @if($isEdit)
-            <x-card class="p-6">
-                <h2 class="font-extrabold text-lg text-rose-700">Hapus Transaksi</h2>
-                <p class="mt-2 text-sm text-slate-500">Saldo dompet akan dikembalikan jika transaksi ini berstatus sukses.</p>
-                <form method="POST" action="{{ route('transactions.destroy', $transaction) }}" class="mt-5">
-                    @csrf
-                    @method('DELETE')
-                    <x-button type="submit" variant="danger" class="w-full">Hapus</x-button>
-                </form>
+        <aside class="grid content-start gap-4 xl:sticky xl:top-[108px]">
+            <x-card class="p-5">
+                <div class="flex items-center gap-3">
+                    <span class="grid h-8 w-8 place-items-center rounded-full bg-emerald-50"><img src="{{ asset('assets/svg/icon-family.svg') }}" class="h-5 w-5" alt=""></span>
+                    <h2 class="text-sm font-extrabold">Ringkasan</h2>
+                </div>
+                <div class="mt-5">
+                    <span class="text-[10px] font-bold text-slate-500">Keluarga</span>
+                    <div class="mt-2 flex items-center gap-3">
+                        <span class="grid h-10 w-10 place-items-center rounded-xl bg-blue-50"><img src="{{ asset('assets/svg/icon-family.svg') }}" class="h-5 w-5" alt=""></span>
+                        <div><b class="block text-xs">{{ auth()->user()?->family?->family_name }}</b><span class="text-[10px] text-slate-500">{{ auth()->user()?->family?->users()->count() }} anggota</span></div>
+                    </div>
+                </div>
+                <div class="mt-4 border-t border-slate-100 pt-4">
+                    <span class="text-[10px] font-bold text-slate-500">Dampak ke Saldo</span>
+                    <strong class="mt-3 block text-xl font-extrabold" :class="type === 'income' ? 'text-emerald-600' : 'text-rose-600'">
+                        <span x-text="type === 'income' ? '+' : '-'"></span> Rp <span x-text="formatAmount()"></span>
+                    </strong>
+                    <span class="mt-2 inline-block rounded-lg px-2 py-1 text-[9px] font-semibold" :class="status === 'cancel' ? 'bg-slate-100 text-slate-500' : (type === 'income' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700')" x-text="status === 'cancel' ? 'Transaksi batal tidak mengubah saldo' : (type === 'income' ? 'Pemasukan akan menambah saldo' : 'Pengeluaran akan mengurangi saldo')"></span>
+                </div>
             </x-card>
-        @endif
-    </div>
-</form>
+
+            <x-card class="p-5">
+                <div class="flex items-center gap-3"><span class="grid h-8 w-8 place-items-center rounded-full bg-amber-50">💡</span><h2 class="text-sm font-extrabold">Tips</h2></div>
+                <ul class="mt-4 grid gap-4 text-[10px] font-medium leading-5 text-slate-500">
+                    <li>♡ Pastikan kategori sesuai agar laporan keuangan akurat.</li>
+                    <li>◎ Gunakan deskripsi untuk mencatat detail penting.</li>
+                    <li>♢ Lampirkan bukti transaksi untuk dokumentasi lebih baik.</li>
+                    <li>✓ Pilih Batal jika transaksi tidak jadi dilakukan.</li>
+                </ul>
+            </x-card>
+
+            @if($isEdit)
+                <form method="POST" action="{{ route('transactions.destroy', $transaction) }}" onsubmit="return confirm('Hapus transaksi ini?')">
+                    @csrf @method('DELETE')
+                    <button class="danger-action w-full">Hapus Transaksi</button>
+                </form>
+            @endif
+        </aside>
+    </form>
 @endsection

@@ -12,10 +12,12 @@ use Illuminate\View\View;
 
 class FamilyMemberController extends Controller
 {
+    private const ALLOWED_ROLES = ['Kepala Keluarga', 'Ibu Rumah Tangga', 'Anak'];
+
     public function index(Request $request): View
     {
         $family = $request->user()->family()->with('users.role')->first();
-        $roles = Role::withCount([
+        $roles = Role::whereIn('role_name', self::ALLOWED_ROLES)->withCount([
             'users as family_users_count' => fn ($query) => $query->where('family_id', $request->user()->family_id),
         ])->orderBy('role_name')->get();
         $allMembers = $family?->users()->with('role')->orderBy('name')->get() ?? collect();
@@ -47,9 +49,12 @@ class FamilyMemberController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'max:150', 'unique:users,email'],
-            'username' => ['nullable', 'string', 'max:50', 'alpha_dash', 'unique:users,username'],
+            'username' => ['nullable', 'string', 'max:50', 'regex:/^[A-Za-z0-9._-]+$/', 'unique:users,username'],
             'phone' => ['nullable', 'string', 'max:30'],
-            'role_id' => ['required', Rule::exists('roles', 'id')],
+            'role_id' => [
+                'required',
+                Rule::exists('roles', 'id')->where(fn ($query) => $query->whereIn('role_name', self::ALLOWED_ROLES)),
+            ],
             'password' => ['required', Password::defaults()],
         ]);
 
@@ -66,7 +71,10 @@ class FamilyMemberController extends Controller
         abort_unless($user->family_id === $request->user()->family_id, 404);
 
         $data = $request->validate([
-            'role_id' => ['required', Rule::exists('roles', 'id')],
+            'role_id' => [
+                'required',
+                Rule::exists('roles', 'id')->where(fn ($query) => $query->whereIn('role_name', self::ALLOWED_ROLES)),
+            ],
             'is_active' => ['required', 'boolean'],
         ]);
 

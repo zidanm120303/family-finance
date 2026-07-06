@@ -26,7 +26,7 @@ class RegisterFamilyController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'max:150', 'unique:users,email'],
-            'username' => ['nullable', 'string', 'max:50', 'alpha_dash', 'unique:users,username'],
+            'username' => ['nullable', 'string', 'max:50', 'regex:/^[A-Za-z0-9._-]+$/', 'unique:users,username'],
             'phone' => ['nullable', 'string', 'max:30'],
             'password' => ['required', 'confirmed', Password::defaults()],
             'family_name' => ['required', 'string', 'max:120'],
@@ -46,7 +46,7 @@ class RegisterFamilyController extends Controller
             );
 
             $family = Family::create([
-                'family_code' => strtoupper($data['family_code'] ?: (string) str($data['family_name'])->slug('')->substr(0, 8).random_int(1000, 9999)),
+                'family_code' => strtoupper(($data['family_code'] ?? null) ?: (string) str($data['family_name'])->slug('')->substr(0, 8).random_int(1000, 9999)),
                 'family_name' => $data['family_name'],
                 'address' => $data['address'],
                 'city' => $data['city'],
@@ -60,7 +60,7 @@ class RegisterFamilyController extends Controller
                 'role_id' => $role->id,
                 'name' => $data['name'],
                 'email' => $data['email'],
-                'username' => $data['username'] ?: (string) str($data['email'])->before('@'),
+                'username' => ($data['username'] ?? null) ?: (string) str($data['email'])->before('@'),
                 'password' => $data['password'],
                 'phone' => $data['phone'] ?? null,
                 'is_active' => true,

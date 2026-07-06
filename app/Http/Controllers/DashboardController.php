@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Budget, Transaction, TransactionHistory, Wallet};
+use App\Models\Budget;
+use App\Models\Transaction;
+use App\Models\TransactionHistory;
+use App\Models\Wallet;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -79,12 +82,13 @@ class DashboardController extends Controller
                 ];
             });
 
-        $cashflowRows = Transaction::selectRaw('DAY(transaction_date) as day, type, SUM(amount) as total')
+        $dayExpression = $this->dayExpression();
+        $cashflowRows = Transaction::selectRaw("{$dayExpression} as day, type, SUM(amount) as total")
             ->where('family_id', $familyId)
             ->where('status', 'success')
             ->whereMonth('transaction_date', $month)
             ->whereYear('transaction_date', $year)
-            ->groupBy('day', 'type')
+            ->groupByRaw("{$dayExpression}, type")
             ->get();
 
         $cashflow = $this->buildCashflow($cashflowRows, $period->daysInMonth);
@@ -161,5 +165,14 @@ class DashboardController extends Controller
             'income' => $income,
             'expense' => $expense,
         ];
+    }
+
+    private function dayExpression(): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => "CAST(strftime('%d', transaction_date) AS INTEGER)",
+            'pgsql' => 'EXTRACT(DAY FROM transaction_date)',
+            default => 'DAY(transaction_date)',
+        };
     }
 }
