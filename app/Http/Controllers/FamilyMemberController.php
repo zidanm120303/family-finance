@@ -14,9 +14,12 @@ class FamilyMemberController extends Controller
 {
     private const ALLOWED_ROLES = ['Kepala Keluarga', 'Ibu Rumah Tangga', 'Anak'];
 
+    private const MANAGER_ROLES = ['Kepala Keluarga', 'Ibu Rumah Tangga'];
+
     public function index(Request $request): View
     {
         $family = $request->user()->family()->with('users.role')->first();
+        $canManageMembers = $this->canManageMembers($request);
         $roles = Role::whereIn('role_name', self::ALLOWED_ROLES)->withCount([
             'users as family_users_count' => fn ($query) => $query->where('family_id', $request->user()->family_id),
         ])->orderBy('role_name')->get();
@@ -40,11 +43,14 @@ class FamilyMemberController extends Controller
             'roles' => $roles,
             'members' => $members,
             'allMembers' => $allMembers,
+            'canManageMembers' => $canManageMembers,
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
+        abort_unless($this->canManageMembers($request), 403);
+
         $familyId = $request->user()->family_id;
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
@@ -68,6 +74,7 @@ class FamilyMemberController extends Controller
 
     public function update(Request $request, User $user): RedirectResponse
     {
+        abort_unless($this->canManageMembers($request), 403);
         abort_unless($user->family_id === $request->user()->family_id, 404);
 
         $data = $request->validate([
@@ -81,5 +88,10 @@ class FamilyMemberController extends Controller
         $user->update($data);
 
         return back()->with('success', 'Anggota keluarga berhasil diperbarui.');
+    }
+
+    private function canManageMembers(Request $request): bool
+    {
+        return in_array($request->user()?->role?->role_name, self::MANAGER_ROLES, true);
     }
 }

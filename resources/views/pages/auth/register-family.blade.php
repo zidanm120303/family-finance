@@ -25,14 +25,14 @@
 
     <main class="mx-auto w-full max-w-[1280px] px-4 py-7 sm:px-6 lg:px-8">
         <div class="text-center">
-            <h1 class="font-['Plus_Jakarta_Sans'] text-2xl font-extrabold">Daftar &amp; Buat Keluarga</h1>
-            <p class="mt-2 text-xs font-medium text-slate-500">Buat akun Anda dan siapkan keluarga untuk mulai mengelola keuangan bersama.</p>
+            <h1 class="font-['Plus_Jakarta_Sans'] text-2xl font-extrabold">Daftar / Gabung Keluarga</h1>
+            <p class="mt-2 text-xs font-medium text-slate-500">Buat keluarga baru sebagai Kepala Keluarga atau bergabung sebagai Ibu Rumah Tangga.</p>
         </div>
 
         <div class="mx-auto mt-6 grid max-w-4xl grid-cols-3 gap-2 sm:gap-4">
             @foreach([
                 ['1', 'Akun', 'Buat akun Anda', true],
-                ['2', 'Data Keluarga', 'Lengkapi informasi keluarga', false],
+                ['2', 'Data Keluarga', 'Buat atau gabung keluarga', false],
                 ['3', 'Preferensi', 'Atur preferensi awal', false],
             ] as [$number, $title, $text, $active])
                 <div class="relative min-w-0">
@@ -48,7 +48,7 @@
             @endforeach
         </div>
 
-        <form method="POST" action="{{ route('register-family.store') }}" class="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_350px]" x-data="{ showPassword: false, showConfirm: false }">
+        <form method="POST" action="{{ route('register-family.store') }}" class="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_350px]" x-data="{ showPassword: false, showConfirm: false, accountRole: @js(old('account_role', 'kepala_keluarga')) }">
             @csrf
             <section class="ff-card p-4 sm:p-5">
                 <div>
@@ -94,43 +94,58 @@
                 </div>
 
                 <div class="mt-5 flex items-center gap-2 text-xs font-extrabold">
-                    <img src="{{ asset('assets/svg/icon-family.svg') }}" class="h-4 w-4" alt=""> Informasi Keluarga
+                    <img src="{{ asset('assets/svg/icon-family.svg') }}" class="h-4 w-4" alt="">
+                    <span x-text="accountRole === 'kepala_keluarga' ? 'Informasi Keluarga Baru' : 'Gabung Keluarga'"></span>
                 </div>
                 <div class="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-12">
-                    <label class="{{ $labelClass }} xl:col-span-5">Nama Keluarga
-                        <input name="family_name" value="{{ old('family_name') }}" class="{{ $fieldClass }}" placeholder="Contoh: Keluarga Pratama" required>
+                    <label x-show="accountRole === 'kepala_keluarga'" x-cloak class="{{ $labelClass }} xl:col-span-5">Nama Keluarga
+                        <input name="family_name" value="{{ old('family_name') }}" class="{{ $fieldClass }}" placeholder="Contoh: Keluarga Pratama" :required="accountRole === 'kepala_keluarga'">
                     </label>
-                    <label class="{{ $labelClass }} xl:col-span-4">Kode Keluarga
-                        <input name="family_code" value="{{ old('family_code') }}" class="{{ $fieldClass }}" placeholder="PRATAMA2026">
+                    <label class="{{ $labelClass }}" :class="accountRole === 'kepala_keluarga' ? 'xl:col-span-4' : 'sm:col-span-2 xl:col-span-9'">Kode Keluarga
+                        <input name="family_code" value="{{ old('family_code') }}" class="{{ $fieldClass }}" placeholder="FF12345" :required="accountRole === 'ibu_rumah_tangga'">
+                        <span x-show="accountRole === 'kepala_keluarga'" class="mt-1 block text-[9px] font-medium text-slate-500">Opsional. Jika kosong, sistem membuat kode pendek otomatis.</span>
+                        <span x-show="accountRole === 'ibu_rumah_tangga'" x-cloak class="mt-1 block text-[9px] font-medium text-slate-500">Minta kode ini dari Kepala Keluarga, contoh: FF12345.</span>
                     </label>
                     <div class="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3 sm:row-span-3 xl:col-span-3 xl:row-span-3">
-                        <strong class="text-[11px] text-emerald-800">Peran Anda</strong>
-                        <div class="mt-3 flex items-start gap-2.5">
-                            <span class="mt-0.5 h-4 w-4 rounded-full border-[4px] border-emerald-600 bg-white"></span>
-                            <div>
-                                <b class="block text-[11px]">Kepala Keluarga</b>
-                                <p class="mt-1 text-[9px] font-medium leading-4 text-slate-500">Akses penuh untuk mengelola keuangan, anggota, dan pengaturan keluarga.</p>
-                            </div>
+                        <strong class="text-[11px] text-emerald-800">Peran Anda dalam Keluarga</strong>
+                        <p class="mt-2 text-[9px] font-medium leading-4 text-slate-500">Pilih peran Anda untuk menentukan cara akun terhubung ke keluarga.</p>
+                        <div class="mt-4 grid gap-4">
+                            <label class="flex cursor-pointer items-start gap-3">
+                                <input type="radio" name="account_role" value="kepala_keluarga" x-model="accountRole" class="peer sr-only" @checked(old('account_role', 'kepala_keluarga') === 'kepala_keluarga')>
+                                <span class="mt-0.5 h-4 w-4 shrink-0 rounded-full border border-slate-300 bg-white peer-checked:border-[5px] peer-checked:border-emerald-600"></span>
+                                <span>
+                                    <b class="block text-[11px]">Kepala Keluarga</b>
+                                    <span class="mt-1 block text-[9px] font-medium leading-4 text-slate-500">Membuat keluarga baru, mengatur anggota, dan menjadi pemilik kode keluarga.</span>
+                                </span>
+                            </label>
+                            <label class="flex cursor-pointer items-start gap-3">
+                                <input type="radio" name="account_role" value="ibu_rumah_tangga" x-model="accountRole" class="peer sr-only" @checked(old('account_role') === 'ibu_rumah_tangga')>
+                                <span class="mt-0.5 h-4 w-4 shrink-0 rounded-full border border-slate-300 bg-white peer-checked:border-[5px] peer-checked:border-emerald-600"></span>
+                                <span>
+                                    <b class="block text-[11px]">Ibu Rumah Tangga</b>
+                                    <span class="mt-1 block text-[9px] font-medium leading-4 text-slate-500">Bergabung ke keluarga yang sudah dibuat memakai kode keluarga.</span>
+                                </span>
+                            </label>
                         </div>
                     </div>
-                    <label class="{{ $labelClass }} sm:col-span-2 xl:col-span-9">Alamat
-                        <textarea name="address" rows="2" class="{{ $fieldClass }} h-16 py-2.5" placeholder="Contoh: Jl. Melati No. 10" required>{{ old('address') }}</textarea>
+                    <label x-show="accountRole === 'kepala_keluarga'" x-cloak class="{{ $labelClass }} sm:col-span-2 xl:col-span-9">Alamat
+                        <textarea name="address" rows="2" class="{{ $fieldClass }} h-16 py-2.5" placeholder="Contoh: Jl. Melati No. 10" :required="accountRole === 'kepala_keluarga'">{{ old('address') }}</textarea>
                     </label>
-                    <label class="{{ $labelClass }} xl:col-span-3">Kota
-                        <input name="city" value="{{ old('city') }}" class="{{ $fieldClass }}" placeholder="Jakarta Selatan" required>
+                    <label x-show="accountRole === 'kepala_keluarga'" x-cloak class="{{ $labelClass }} xl:col-span-3">Kota
+                        <input name="city" value="{{ old('city') }}" class="{{ $fieldClass }}" placeholder="Jakarta Selatan" :required="accountRole === 'kepala_keluarga'">
                     </label>
-                    <label class="{{ $labelClass }} xl:col-span-3">Provinsi
-                        <input name="province" value="{{ old('province') }}" class="{{ $fieldClass }}" placeholder="DKI Jakarta" required>
+                    <label x-show="accountRole === 'kepala_keluarga'" x-cloak class="{{ $labelClass }} xl:col-span-3">Provinsi
+                        <input name="province" value="{{ old('province') }}" class="{{ $fieldClass }}" placeholder="DKI Jakarta" :required="accountRole === 'kepala_keluarga'">
                     </label>
-                    <label class="{{ $labelClass }} xl:col-span-3">Kode Pos
-                        <input name="postal_code" value="{{ old('postal_code') }}" class="{{ $fieldClass }}" placeholder="12450" required>
+                    <label x-show="accountRole === 'kepala_keluarga'" x-cloak class="{{ $labelClass }} xl:col-span-3">Kode Pos
+                        <input name="postal_code" value="{{ old('postal_code') }}" class="{{ $fieldClass }}" placeholder="12450" :required="accountRole === 'kepala_keluarga'">
                     </label>
-                    <label class="{{ $labelClass }} xl:col-span-4">Telepon Keluarga (Opsional)
+                    <label x-show="accountRole === 'kepala_keluarga'" x-cloak class="{{ $labelClass }} xl:col-span-4">Telepon Keluarga (Opsional)
                         <input name="family_phone" value="{{ old('family_phone') }}" class="{{ $fieldClass }}" placeholder="021-1234567">
                     </label>
                 </div>
 
-                <div class="mt-5 rounded-xl border border-slate-200 p-3">
+                <div x-show="accountRole === 'kepala_keluarga'" x-cloak class="mt-5 rounded-xl border border-slate-200 p-3">
                     <strong class="text-[11px]">Pengaturan Awal</strong>
                     <label class="mt-2 flex items-center justify-between gap-4 rounded-lg bg-slate-50 p-3">
                         <span class="flex min-w-0 items-start gap-3">
@@ -140,13 +155,13 @@
                                 <span class="text-[9px] font-medium text-slate-500">Gunakan kategori pemasukan dan pengeluaran standar.</span>
                             </span>
                         </span>
-                        <input name="create_defaults" value="1" type="checkbox" class="h-5 w-5 shrink-0 rounded-full border-slate-300 text-emerald-600 focus:ring-emerald-500" @checked(old('create_defaults', true))>
+                        <input name="create_defaults" value="1" type="checkbox" class="h-5 w-5 shrink-0 rounded-full border-slate-300 text-emerald-600 focus:ring-emerald-500" :disabled="accountRole !== 'kepala_keluarga'" @checked(old('create_defaults', true))>
                     </label>
                 </div>
 
                 <div class="mt-4 grid gap-3 sm:grid-cols-[.75fr_1.25fr]">
-                    <a href="{{ route('login') }}" class="secondary-action">← Kembali ke Login</a>
-                    <button class="primary-action">Buat Akun &amp; Keluarga <span aria-hidden="true">→</span></button>
+                    <a href="{{ route('login') }}" class="secondary-action">&larr; Kembali ke Login</a>
+                    <button class="primary-action"><span x-text="accountRole === 'kepala_keluarga' ? 'Buat Akun & Keluarga' : 'Gabung ke Keluarga'"></span> <span aria-hidden="true">-&gt;</span></button>
                 </div>
                 <p class="mt-3 text-center text-[9px] font-medium text-slate-500">Dengan membuat akun, Anda menyetujui <span class="text-emerald-600">Syarat &amp; Ketentuan</span> dan <span class="text-emerald-600">Kebijakan Privasi</span>.</p>
             </section>

@@ -11,11 +11,21 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 class RegisterFamilyController extends Controller
 {
+    private const ROLE_HEAD = 'kepala_keluarga';
+
+    private const ROLE_MOTHER = 'ibu_rumah_tangga';
+
+    private const REGISTER_ROLES = [
+        self::ROLE_HEAD => 'Kepala Keluarga',
+        self::ROLE_MOTHER => 'Ibu Rumah Tangga',
+    ];
+
     public function show(): View
     {
         return view('pages.auth.register-family');
@@ -23,30 +33,72 @@ class RegisterFamilyController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $request->merge([
+            'account_role' => $request->input('account_role', self::ROLE_HEAD),
+            'family_code' => $this->normalizeFamilyCode($request->input('family_code')),
+        ]);
+
+        $isHeadOfFamily = $request->input('account_role') === self::ROLE_HEAD;
+
         $data = $request->validate([
+            'account_role' => ['required', Rule::in(array_keys(self::REGISTER_ROLES))],
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'max:150', 'unique:users,email'],
             'username' => ['nullable', 'string', 'max:50', 'regex:/^[A-Za-z0-9._-]+$/', 'unique:users,username'],
             'phone' => ['nullable', 'string', 'max:30'],
             'password' => ['required', 'confirmed', Password::defaults()],
-            'family_name' => ['required', 'string', 'max:120'],
-            'family_code' => ['nullable', 'string', 'max:30', 'alpha_dash', 'unique:families,family_code'],
-            'address' => ['required', 'string', 'max:500'],
-            'city' => ['required', 'string', 'max:80'],
-            'province' => ['required', 'string', 'max:80'],
-            'postal_code' => ['required', 'string', 'max:20'],
+            'family_name' => [Rule::requiredIf($isHeadOfFamily), 'nullable', 'string', 'max:120'],
+            'family_code' => [
+                Rule::requiredIf(! $isHeadOfFamily),
+                'nullable',
+                'string',
+                'min:4',
+                'max:20',
+                'regex:/^[A-Z0-9-]+$/',
+                $isHeadOfFamily
+                    ? Rule::unique('families', 'family_code')
+                    : Rule::exists('families', 'family_code'),
+            ],
+            'address' => [Rule::requiredIf($isHeadOfFamily), 'nullable', 'string', 'max:500'],
+            'city' => [Rule::requiredIf($isHeadOfFamily), 'nullable', 'string', 'max:80'],
+            'province' => [Rule::requiredIf($isHeadOfFamily), 'nullable', 'string', 'max:80'],
+            'postal_code' => [Rule::requiredIf($isHeadOfFamily), 'nullable', 'string', 'max:20'],
             'family_phone' => ['nullable', 'string', 'max:30'],
             'create_defaults' => ['nullable', 'boolean'],
+        ], [
+            'account_role.required' => 'Pilih peran akun terlebih dahulu.',
+            'account_role.in' => 'Peran akun tidak valid.',
+            'family_code.required' => 'Kode keluarga wajib diisi untuk bergabung sebagai Ibu Rumah Tangga.',
+            'family_code.exists' => 'Kode keluarga tidak ditemukan.',
+            'family_code.unique' => 'Kode keluarga sudah digunakan.',
+            'family_code.regex' => 'Kode keluarga hanya boleh berisi huruf, angka, atau tanda hubung.',
         ]);
 
         $user = DB::transaction(function () use ($data) {
+            $roleName = self::REGISTER_ROLES[$data['account_role']];
             $role = Role::firstOrCreate(
-                ['role_name' => 'Kepala Keluarga'],
-                ['description' => 'Akses penuh ke semua fitur dan pengaturan.']
+                ['role_name' => $roleName],
+                ['description' => $this->roleDescription($roleName)]
             );
 
+            if ($data['account_role'] === self::ROLE_MOTHER) {
+                $family = Family::where('family_code', $data['family_code'])->firstOrFail();
+
+                return User::create([
+                    'family_id' => $family->id,
+                    'role_id' => $role->id,
+                    'name' => $data['name'],
+                    'email' => $data['email'],
+                    'username' => ($data['username'] ?? null) ?: (string) str($data['email'])->before('@'),
+                    'password' => $data['password'],
+                    'phone' => $data['phone'] ?? null,
+                    'is_active' => true,
+                    'last_login' => now(),
+                ]);
+            }
+
             $family = Family::create([
-                'family_code' => strtoupper(($data['family_code'] ?? null) ?: (string) str($data['family_name'])->slug('')->substr(0, 8).random_int(1000, 9999)),
+                'family_code' => ($data['family_code'] ?? null) ?: $this->generateFamilyCode(),
                 'family_name' => $data['family_name'],
                 'address' => $data['address'],
                 'city' => $data['city'],
@@ -80,6 +132,34 @@ class RegisterFamilyController extends Controller
         $request->session()->regenerate();
 
         return redirect()->route('dashboard');
+    }
+
+    private function normalizeFamilyCode(?string $code): ?string
+    {
+        $normalized = strtoupper(trim((string) $code));
+        $normalized = preg_replace('/[\s_]+/', '-', $normalized);
+        $normalized = preg_replace('/[^A-Z0-9-]/', '', $normalized);
+        $normalized = preg_replace('/-+/', '-', $normalized);
+        $normalized = trim($normalized, '-');
+
+        return $normalized !== '' ? $normalized : null;
+    }
+
+    private function generateFamilyCode(): string
+    {
+        do {
+            $code = 'FF' . random_int(10000, 99999);
+        } while (Family::where('family_code', $code)->exists());
+
+        return $code;
+    }
+
+    private function roleDescription(string $roleName): string
+    {
+        return match ($roleName) {
+            'Ibu Rumah Tangga' => 'Mengelola transaksi harian serta memantau anggaran dan laporan keluarga.',
+            default => 'Mengelola seluruh transaksi, anggaran, anggota, dan pengaturan keluarga.',
+        };
     }
 
     private function createDefaults(int $familyId): void

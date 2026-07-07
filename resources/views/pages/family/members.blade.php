@@ -79,11 +79,13 @@
         </section>
 
         <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-            <div class="flex flex-wrap gap-2">
-                <button type="button" @click="addOpen = true" class="primary-action">+ Tambah Anggota</button>
-                <button type="button" @click="addOpen = true" class="secondary-action text-blue-600">✉ Undang via
-                    Email</button>
-            </div>
+            @if ($canManageMembers)
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" @click="addOpen = true" class="primary-action">+ Tambah Anggota</button>
+                    <button type="button" @click="addOpen = true" class="secondary-action text-blue-600">Undang via
+                        Email</button>
+                </div>
+            @endif
             <form method="GET" action="{{ route('family.members') }}"
                 class="grid min-w-0 gap-2 sm:grid-cols-[minmax(220px,1fr)_150px_auto]">
                 <label class="relative min-w-0">
@@ -122,7 +124,9 @@
                             <th>Phone</th>
                             <th>Status</th>
                             <th>Last Login</th>
-                            <th class="text-center">Aksi</th>
+                            @if ($canManageMembers)
+                                <th class="text-center">Aksi</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -155,6 +159,7 @@
                                     {{ $member->last_login?->translatedFormat('d M Y') ?? '—' }}<span
                                         class="mt-1 block text-[9px] text-slate-400">{{ $member->last_login?->format('H:i') }}</span>
                                 </td>
+                                @if ($canManageMembers)
                                 <td>
                                     <details class="group relative">
                                         <summary class="ff-icon-button mx-auto h-8 w-8 cursor-pointer list-none">⋮</summary>
@@ -184,10 +189,11 @@
                                         </div>
                                     </details>
                                 </td>
+                                @endif
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8">
+                                <td colspan="{{ $canManageMembers ? 8 : 7 }}">
                                     <div class="ff-empty">Tidak ada anggota yang cocok.</div>
                                 </td>
                             </tr>
@@ -197,6 +203,7 @@
             </div>
         </x-card>
 
+        @if ($canManageMembers)
         <div x-show="addOpen" x-cloak>
             <button type="button" class="fixed inset-0 z-40 bg-slate-950/40" @click="addOpen = false"
                 aria-label="Tutup panel"></button>
@@ -229,5 +236,6 @@
                 </form>
             </aside>
         </div>
+        @endif
     </div>
 @endsection

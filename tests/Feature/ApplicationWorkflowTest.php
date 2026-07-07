@@ -35,7 +35,11 @@ class ApplicationWorkflowTest extends TestCase
     public function test_guest_and_authenticated_page_access_is_correct(): void
     {
         $this->get(route('login'))->assertOk()->assertSee('Masuk');
-        $this->get(route('register-family'))->assertOk()->assertSee('Daftar Keluarga');
+        $this->get(route('register-family'))
+            ->assertOk()
+            ->assertSee('Daftar Keluarga')
+            ->assertSee('Kepala Keluarga')
+            ->assertSee('Ibu Rumah Tangga');
 
         foreach ([
             route('dashboard'),
@@ -122,6 +126,7 @@ class ApplicationWorkflowTest extends TestCase
     public function test_family_registration_creates_a_ready_to_use_account(): void
     {
         $response = $this->post(route('register-family.store'), [
+            'account_role' => 'kepala_keluarga',
             'name' => 'Andi Raharja',
             'email' => 'andi.raharja@example.com',
             'phone' => '081234567890',
@@ -139,11 +144,36 @@ class ApplicationWorkflowTest extends TestCase
         $newUser = User::where('email', 'andi.raharja@example.com')->firstOrFail();
         $this->assertAuthenticatedAs($newUser);
         $this->assertSame('andi.raharja', $newUser->username);
+        $this->assertSame('Kepala Keluarga', $newUser->role?->role_name);
         $this->assertSame('Keluarga Raharja', $newUser->family?->family_name);
+        $this->assertMatchesRegularExpression('/^FF\d{5}$/', $newUser->family?->family_code);
         $this->assertSame($newUser->id, $newUser->family?->created_by);
         $this->assertTrue(Hash::check('rahasia123', $newUser->password));
         $this->assertSame(10, $newUser->family?->categories()->count());
         $this->assertSame(1, $newUser->family?->wallets()->count());
+    }
+
+    public function test_mother_registration_joins_an_existing_family_by_code(): void
+    {
+        $family = Family::where('family_code', 'PRATAMA2026')->firstOrFail();
+
+        $response = $this->post(route('register-family.store'), [
+            'account_role' => 'ibu_rumah_tangga',
+            'name' => 'Maya Pratama',
+            'email' => 'maya.pratama@example.com',
+            'phone' => '081234567891',
+            'password' => 'rahasia123',
+            'password_confirmation' => 'rahasia123',
+            'family_code' => strtolower($family->family_code),
+        ]);
+
+        $response->assertRedirect(route('dashboard'));
+
+        $newUser = User::where('email', 'maya.pratama@example.com')->firstOrFail();
+        $this->assertAuthenticatedAs($newUser);
+        $this->assertSame($family->id, $newUser->family_id);
+        $this->assertSame('Ibu Rumah Tangga', $newUser->role?->role_name);
+        $this->assertDatabaseCount('families', 1);
     }
 
     public function test_transaction_lifecycle_keeps_wallet_and_history_consistent(): void
@@ -399,6 +429,21 @@ class ApplicationWorkflowTest extends TestCase
             'role_id' => $childRole->id,
             'is_active' => false,
         ])->assertNotFound();
+
+        $childUser = User::whereHas('role', fn ($query) => $query->where('role_name', 'Anak'))->firstOrFail();
+        $this->actingAs($childUser);
+
+        $this->post(route('family.members.store'), [
+            'name' => 'Reno Pratama',
+            'email' => 'reno.pratama@example.com',
+            'role_id' => $childRole->id,
+            'password' => 'password123',
+        ])->assertForbidden();
+
+        $this->patch(route('family.members.update', $member), [
+            'role_id' => $childRole->id,
+            'is_active' => true,
+        ])->assertForbidden();
     }
 
     public function test_filters_reports_and_statuses_return_consistent_data(): void

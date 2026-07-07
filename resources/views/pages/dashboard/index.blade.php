@@ -104,7 +104,8 @@
                     @endforelse
                 </div>
                 <div class="mt-3 flex items-center justify-between rounded-xl bg-emerald-50 px-3 py-2 text-[10px]">
-                    <span>Total Saldo</span><b class="text-emerald-700">{{ $formatCurrency($totalBalance) }}</b></div>
+                    <span>Total Saldo</span><b class="text-emerald-700">{{ $formatCurrency($totalBalance) }}</b>
+                </div>
             </x-card>
         </section>
 
